@@ -9,19 +9,38 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.9.0",
+    "@headlessui/react": "^2.2.2",
+    "@heroicons/react": "^2.2.0",
+    "@libsql/client": "^0.15.4",
+    "@t3-oss/env-nextjs": "^0.12.0",
+    "@tanstack/react-query": "^5.74.4",
+    "@trpc/client": "^11.1.0",
+    "@trpc/react-query": "^11.1.0",
+    "@trpc/server": "^11.1.0",
+    "dotenv": "^16.5.0",
+    "drizzle-orm": "^0.42.0",
+    "next": "15.3.1",
+    "next-auth": "^5.0.0-beta.26",
+    "pg": "^8.14.1",
+    "postgres": "^3.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.3.1"
+    "react-icons": "^5.5.0",
+    "zod": "^3.24.3"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4.1.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "autoprefixer": "^10.4.21",
+    "drizzle-kit": "^0.31.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
-    "@eslint/eslintrc": "^3"
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.4",
+    "typescript": "^5"
   }
 }
