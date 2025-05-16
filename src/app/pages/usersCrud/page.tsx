@@ -13,15 +13,8 @@ import { trpc } from '@/utils/trpc';
 
 // --- Placeholder for trpco types ---
 // You should replace these with your actual types from your trpco router
+
 interface User {
-  id: string;
-  name: string | null;
-  email: string | null;
-  role: string; // Example field
-  createdAt: Date;
-  updatedAt: Date;
-}
-interface Usero {
   id: string;
   name: string | null;
   email: string | null;
@@ -44,50 +37,8 @@ interface UpdateUserInput extends Partial<CreateUserInput> {
 // --- Placeholder for trpco hooks (replace with your actual trpco hooks) ---
 const trpco = {
   user: {
-    getAll: {
-      useQuery: () => {
-        // This is a mock implementation. Replace with your actual trpco hook.
-        const [data, setData] = useState<User[] | undefined>(undefined);
-        const [isLoading, setIsLoading] = useState(true);
-        const [error, setError] = useState<Error | null>(null);
 
-        useEffect(() => {
-          // Simulate API call
-          setTimeout(() => {
-            setData([
-              { id: '1', name: 'Alice Wonderland', email: 'alice@example.com', role: 'Admin', createdAt: new Date(), updatedAt: new Date() },
-              { id: '2', name: 'Bob The Builder', email: 'bob@example.com', role: 'User', createdAt: new Date(), updatedAt: new Date() },
-              { id: '3', name: 'Charlie Brown', email: 'charlie@example.com', role: 'Editor', createdAt: new Date(), updatedAt: new Date() },
-            ]);
-            setIsLoading(false);
-          }, 1000);
-        }, []);
-        return { data, isLoading, error, refetch: () => console.log("Refetching users...") };
-      }
-    },
-    create: {
-      useMutation: ({ onSuccess, onError }: { onSuccess?: (data: User) => void, onError?: (error: Error) => void } = {}) => {
-        // This is a mock implementation. Replace with your actual trpco hook.
-        const [isLoading, setIsLoading] = useState(false);
-        const mutate = async (input: CreateUserInput) => {
-          setIsLoading(true);
-          console.log('Creating user:', input);
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const newUser: User = { ...input, id: String(Math.random()), createdAt: new Date(), updatedAt: new Date() };
-          setIsLoading(false);
-          if (Math.random() > 0.1) { // Simulate success
-            onSuccess?.(newUser);
-            return newUser;
-          } else { // Simulate error
-            const err = new Error("Failed to create user");
-            onError?.(err);
-            throw err;
-          }
-        };
-        return { mutate, isLoading };
-      }
-    },
+   
     update: {
       useMutation: ({ onSuccess, onError }: { onSuccess?: (data: User) => void, onError?: (error: Error) => void } = {}) => {
         // This is a mock implementation. Replace with your actual trpco hook.
@@ -97,7 +48,7 @@ const trpco = {
           console.log('Updating user:', input);
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const updatedUser: User = { ...input, name: input.name || "Updated Name", email: input.email || "updated@example.com", role: input.role || "User", createdAt: new Date(), updatedAt: new Date() };
+          const updatedUser: User = { ...input, name: input.name || "Updated Name", email: input.email || "updated@example.com", role: input.role || "guest",  };
           setIsLoading(false);
           if (Math.random() > 0.1) { // Simulate success
             onSuccess?.(updatedUser);
@@ -152,7 +103,7 @@ const UserManagementPage: NextPage = () => {
 
   // State for managing modals and selected user
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<Usero | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<UserFormData>({ name: '', email: '', role:"guest"});
 
   // trpco queries and mutations
