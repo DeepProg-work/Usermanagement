@@ -20,9 +20,9 @@ export const users = sqliteTable("user", {
   email: text("email").unique(),
   emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
   image: text("image"),
-  role: text("role", { enum: ["admin", "moderator", "guest"] })
+  role: text("role", { enum: ["Admin", "Moderator", "Guest"] })
     .notNull()
-    .default("guest"),
+    .default("Guest"),
 })
  
 export const accounts = sqliteTable(

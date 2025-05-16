@@ -1,10 +1,15 @@
 'use client'
 
-// pages/admin/users.tsx
+
+// pages/Admin/users.tsx
 import { useState, useEffect } from 'react';
 import { NextPage } from 'next';
 import { useSession } from 'next-auth/react';
 import { FaPlus, FaEdit, FaTrash, FaSpinner } from 'react-icons/fa'; // Example icons
+import { trpc } from '@/utils/trpc';
+
+// Assuming you have your trpco client setup like this
+// import { trpco } from '../utils/trpco'; // Adjust path as needed
 
 // --- Placeholder for trpco types ---
 // You should replace these with your actual types from your trpco router
@@ -13,15 +18,13 @@ interface User {
   id: string;
   name: string | null;
   email: string | null;
-  role: string; // Example field
-  createdAt: Date;
-  updatedAt: Date;
+  role: "Guest"|"Admin"|"Moderator"; // Example field
+ 
 }
-
 interface CreateUserInput {
   name: string;
   email: string;
-  role: "guest"|"admin"|"moderator";
+  role: "Guest"|"Admin"|"Moderator";
   // Add other fields as necessary
 }
 
@@ -31,54 +34,11 @@ interface UpdateUserInput extends Partial<CreateUserInput> {
 // --- End Placeholder for trpco types ---
 
 
-// --- Placeholder for tRPC hooks (replace with your actual tRPC hooks) ---
-const trpc = {
+// --- Placeholder for trpco hooks (replace with your actual trpco hooks) ---
+const trpco = {
   user: {
-    getAll: {
-      useQuery: () => {
-        // This is a mock implementation. Replace with your actual tRPC hook.
-        const [data, setData] = useState<User[] | undefined>(undefined);
-        const [isLoading, setIsLoading] = useState(true);
-        const [error, setError] = useState<Error | null>(null);
 
-        useEffect(() => {
-          // Simulate API call
-          setTimeout(() => {
-            setData([
-              { id: '1', name: 'Alice Wonderland', email: 'alice@example.com', role: 'Admin', createdAt: new Date(), updatedAt: new Date() },
-              { id: '2', name: 'Bob The Builder', email: 'bob@example.com', role: 'User', createdAt: new Date(), updatedAt: new Date() },
-              { id: '3', name: 'Charlie Brown', email: 'charlie@example.com', role: 'Editor', createdAt: new Date(), updatedAt: new Date() },
-            ]);
-            setIsLoading(false);
-          }, 1000);
-        }, []);
-        return { data, isLoading, error, refetch: () => console.log("Refetching users...") };
-      }
-    },
-    create: {
-      useMutation: ({ onSuccess, onError }: { onSuccess?: (data: User) => void, onError?: (error: Error) => void } = {}) => {
-        // This is a mock implementation. Replace with your actual tRPC hook.
-        const [isLoading, setIsLoading] = useState(false);
-        const mutate = async (input: CreateUserInput) => {
-          setIsLoading(true);
-          console.log('Creating user:', input);
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const newUser: User = { ...input, id: String(Math.random()), createdAt: new Date(), updatedAt: new Date() };
-          setIsLoading(false);
-          if (Math.random() > 0.1) { // Simulate success
-            onSuccess?.(newUser);
-            return newUser;
-          } else { // Simulate error
-            const err = new Error("Failed to create user");
-            onError?.(err);
-            throw err;
-          }
-        };
-        return { mutate, isLoading };
-      }
-    },
-    update: {
+       update: {
       useMutation: ({ onSuccess, onError }: { onSuccess?: (data: User) => void, onError?: (error: Error) => void } = {}) => {
         // This is a mock implementation. Replace with your actual trpco hook.
         const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +47,7 @@ const trpc = {
           console.log('Updating user:', input);
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const updatedUser: User = { ...input, name: input.name || "Updated Name", email: input.email || "updated@example.com", role: input.role || "User", createdAt: new Date(), updatedAt: new Date() };
+          const updatedUser: User = { ...input, name: input.name || "Updated Name", email: input.email || "updated@example.com", role: input.role || "Guest",  };
           setIsLoading(false);
           if (Math.random() > 0.1) { // Simulate success
             onSuccess?.(updatedUser);
@@ -132,7 +92,7 @@ const trpc = {
 type UserFormData = {
   name: string;
   email: string;
-  role: "guest"|"admin"|"moderator";  // Adjust based on your roles
+  role: "Guest"|"Admin"|"Moderator";  // Adjust based on your roles
   // Add other fields as necessary
 };
 
@@ -143,13 +103,13 @@ const UserManagementPage: NextPage = () => {
   // State for managing modals and selected user
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState<UserFormData>({ name: '', email: '', role:"guest"});
+  const [formData, setFormData] = useState<UserFormData>({ name: '', email: '', role:"Guest"});
 
   // trpco queries and mutations
   // Replace with your actual trpco hooks
   const { data: userso, isLoading: isLoadingUsers, error: usersError, refetch: refetchUsers } = trpc.user.getAllUsers.useQuery();
 
-  const createUserMutation = trpc.user.create.useMutation({
+  const createUserMutation = trpc.user.addNewUser.useMutation({
     onSuccess: () => {
       refetchUsers();
       setIsModalOpen(false);
@@ -161,7 +121,7 @@ const UserManagementPage: NextPage = () => {
     },
   });
 
-  const updateUserMutation = trpc.user.update.useMutation({
+  const updateUserMutation = trpc.user.updateUser.useMutation({
     onSuccess: () => {
       refetchUsers();
       setIsModalOpen(false);
@@ -174,7 +134,7 @@ const UserManagementPage: NextPage = () => {
     },
   });
 
-  const deleteUserMutation = trpc.user.delete.useMutation({
+  const deleteUserMutation = trpco.user.delete.useMutation({
     onSuccess: () => {
       refetchUsers();
       // Add toast notification for success
@@ -191,17 +151,17 @@ const UserManagementPage: NextPage = () => {
       setFormData({
         name: editingUser.name || '',
         email: editingUser.email || '',
-        role: editingUser.role || 'guest', // Default to 'guest' if role is not set
+        role: editingUser.role || 'Guest', // Default to 'Guest' if role is not set
       });
     } else {
-      setFormData({ name: '', email: '', role:"guest"}); // Reset for new user
+      setFormData({ name: '', email: '', role:"Guest"}); // Reset for new user
     }
   }, [editingUser]);
 
   // Handle opening modal for creating a new user
   const handleAddNewUser = () => {
     setEditingUser(null); // Ensure no user is being edited
-    setFormData({ name: '', email: '', role: "guest" }); // Reset form
+    setFormData({ name: '', email: '', role: "Guest" }); // Reset form
     setIsModalOpen(true);
   };
 
@@ -245,7 +205,7 @@ const UserManagementPage: NextPage = () => {
     return <div className="flex justify-center items-center h-screen"><FaSpinner className="animate-spin text-4xl text-blue-500" /> <p className="ml-2">Loading session...</p></div>;
   }
 
-  if (!session || session.user?.role !== 'moderator') { // Example: Restrict to Admin role
+  if (!session || session.user?.role !== 'Moderator') { // Example: Restrict to Admin role
     return <div className="text-center py-10">Access Denied. You must be an Admin to manage users.</div>;
   }
 
@@ -313,8 +273,8 @@ const UserManagementPage: NextPage = () => {
                   </td>
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
                     <span className={`px-2 py-1 font-semibold leading-tight rounded-full text-xs ${
-                        user.role === 'admin' ? 'bg-red-100 text-red-700' : 
-                        user.role === 'moderator' ? 'bg-yellow-100 text-yellow-700' :
+                        user.role === 'Admin' ? 'bg-red-100 text-red-700' : 
+                        user.role === 'Moderator' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-green-100 text-green-700'
                       }`}>
                       {user.role}
@@ -322,7 +282,6 @@ const UserManagementPage: NextPage = () => {
                   </td>
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
                     <p className="text-gray-900 whitespace-no-wrap">
-                      {new Date(user.createdAt).toLocaleDateString()}
                     </p>
                   </td>
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
@@ -393,9 +352,9 @@ const UserManagementPage: NextPage = () => {
                   onChange={handleInputChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
-                  <option value="guest">guest</option>
-                  <option value="moderator">moderator</option>
-                  <option value="admin">admin</option>
+                  <option value="Guest">Guest</option>
+                  <option value="Moderator">Moderator</option>
+                  <option value="Admin">Admin</option>
                 </select>
               </div>
 
@@ -413,10 +372,10 @@ const UserManagementPage: NextPage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={ updateUserMutation.isLoading}
+                 
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 disabled:opacity-70 flex items-center"
                 >
-                  {( updateUserMutation.isLoading) && <FaSpinner className="animate-spin mr-2" />}
+                  
                   {editingUser ? 'Save Changes' : 'Create User'}
                 </button>
               </div>

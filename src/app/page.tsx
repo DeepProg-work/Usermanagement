@@ -11,14 +11,10 @@ export default  function Home() {
     
 
          const { data: session,update } = useSession();
-         const updateRoleMutation = trpc.user.updateRole.useMutation();
+    
   
        const sessionstatus = session ? "Session is active" : "Session is not active";
-       const handleUpdateRole = async () => { await updateRoleMutation.mutateAsync({
-              userId: "2ff2ce77-5d2d-4866-953a-900b4cdd2b9f",
-              newRole: "moderator",
-            });alert("Role updated successfully!");update({ trigger: "update" });
-        }
+    
 
     if (!session) {
   return (
@@ -40,8 +36,7 @@ export default  function Home() {
         <p>Role: {session.user?.role}</p>
 
 
-          <button
-          onClick={handleUpdateRole}className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition mt-2">Update Role</button>
+       
         </div>
       </section>
 
