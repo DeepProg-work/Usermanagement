@@ -1,11 +1,11 @@
 'use client'
 
-
 // pages/admin/users.tsx
 import { useState, useEffect } from 'react';
 import { NextPage } from 'next';
 import { useSession } from 'next-auth/react';
 import { FaPlus, FaEdit, FaTrash, FaSpinner } from 'react-icons/fa'; // Example icons
+import { trpc } from '@/utils/trpc';
 
 // Assuming you have your tRPC client setup like this
 // import { trpc } from '../utils/trpc'; // Adjust path as needed
@@ -17,9 +17,8 @@ interface User {
   name: string | null;
   email: string | null;
   role: string; // Example field
-  createdAt: Date;
-  updatedAt: Date;
-}
+ 
+ }
 
 interface CreateUserInput {
   name: string;
@@ -35,29 +34,13 @@ interface UpdateUserInput extends Partial<CreateUserInput> {
 
 
 // --- Placeholder for tRPC hooks (replace with your actual tRPC hooks) ---
-const trpc = {
-  user: {
-    getAll: {
-      useQuery: () => {
-        // This is a mock implementation. Replace with your actual tRPC hook.
-        const [data, setData] = useState<User[] | undefined>(undefined);
-        const [isLoading, setIsLoading] = useState(true);
-        const [error, setError] = useState<Error | null>(null);
 
-        useEffect(() => {
-          // Simulate API call
-          setTimeout(() => {
-            setData([
-              { id: '1', name: 'Alice Wonderland', email: 'alice@example.com', role: 'Admin', createdAt: new Date(), updatedAt: new Date() },
-              { id: '2', name: 'Bob The Builder', email: 'bob@example.com', role: 'User', createdAt: new Date(), updatedAt: new Date() },
-              { id: '3', name: 'Charlie Brown', email: 'charlie@example.com', role: 'Editor', createdAt: new Date(), updatedAt: new Date() },
-            ]);
-            setIsLoading(false);
-          }, 1000);
-        }, []);
-        return { data, isLoading, error, refetch: () => console.log("Refetching users...") };
-      }
-    },
+
+
+
+const trpc1 = {
+  user: {
+    
     create: {
       useMutation: ({ onSuccess, onError }: { onSuccess?: (data: User) => void, onError?: (error: Error) => void } = {}) => {
         // This is a mock implementation. Replace with your actual tRPC hook.
@@ -67,7 +50,7 @@ const trpc = {
           console.log('Creating user:', input);
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const newUser: User = { ...input, id: String(Math.random()), createdAt: new Date(), updatedAt: new Date() };
+          const newUser: User = { ...input, id: String(Math.random()) };
           setIsLoading(false);
           if (Math.random() > 0.1) { // Simulate success
             onSuccess?.(newUser);
@@ -90,7 +73,7 @@ const trpc = {
           console.log('Updating user:', input);
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
-          const updatedUser: User = { ...input, name: input.name || "Updated Name", email: input.email || "updated@example.com", role: input.role || "User", createdAt: new Date(), updatedAt: new Date() };
+          const updatedUser: User = { ...input, name: input.name || "Updated Name", email: input.email || "updated@example.com", role: input.role || "User"};
           setIsLoading(false);
           if (Math.random() > 0.1) { // Simulate success
             onSuccess?.(updatedUser);
@@ -151,7 +134,7 @@ const UserManagementPage: NextPage = () => {
   // Replace with your actual tRPC hooks
   const { data: users, isLoading: isLoadingUsers, error: usersError, refetch: refetchUsers } = trpc.user.getAll.useQuery();
 
-  const createUserMutation = trpc.user.create.useMutation({
+  const createUserMutation = trpc1.user.create.useMutation({
     onSuccess: () => {
       refetchUsers();
       setIsModalOpen(false);
@@ -163,7 +146,7 @@ const UserManagementPage: NextPage = () => {
     },
   });
 
-  const updateUserMutation = trpc.user.update.useMutation({
+  const updateUserMutation = trpc1.user.update.useMutation({
     onSuccess: () => {
       refetchUsers();
       setIsModalOpen(false);
@@ -176,7 +159,7 @@ const UserManagementPage: NextPage = () => {
     },
   });
 
-  const deleteUserMutation = trpc.user.delete.useMutation({
+  const deleteUserMutation = trpc1.user.delete.useMutation({
     onSuccess: () => {
       refetchUsers();
       // Add toast notification for success
@@ -315,8 +298,8 @@ const UserManagementPage: NextPage = () => {
                   </td>
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
                     <span className={`px-2 py-1 font-semibold leading-tight rounded-full text-xs ${
-                        user.role === 'Admin' ? 'bg-red-100 text-red-700' : 
-                        user.role === 'Editor' ? 'bg-yellow-100 text-yellow-700' :
+                        user.role === 'admin' ? 'bg-red-100 text-red-700' : 
+                        user.role === 'moderator' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-green-100 text-green-700'
                       }`}>
                       {user.role}
@@ -324,7 +307,7 @@ const UserManagementPage: NextPage = () => {
                   </td>
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
                     <p className="text-gray-900 whitespace-no-wrap">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {}
                     </p>
                   </td>
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">

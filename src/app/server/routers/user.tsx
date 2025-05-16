@@ -15,6 +15,24 @@ export const userRouter = router({
       });
       return user 
     }),
+
+ // New procedure to get all users
+  getAll: publicProcedure
+    .query(async ({ ctx }) => {
+      // Assuming ctx.db.query.users.findMany is your ORM's method
+      // to find all users.
+      // Adjust this based on your specific ORM (Prisma, Drizzle, etc.)
+      const allUsers = await ctx.db.query.users.findMany();
+      return allUsers;
+    }),
+
+
+
+
+
+
+
+
   getSecretData: protectedProcedure.query(({ ctx }) => {
     return { message: `Hello, ${ctx.user.name}! This is protected.` };
   }),
