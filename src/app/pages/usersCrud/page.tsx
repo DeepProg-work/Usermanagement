@@ -1,99 +1,28 @@
 'use client'
 
-
-// pages/Admin/users.tsx
 import { useState, useEffect } from 'react';
 import { NextPage } from 'next';
 import { useSession } from 'next-auth/react';
 import { FaPlus, FaEdit, FaTrash, FaSpinner } from 'react-icons/fa'; // Example icons
 import { trpc } from '@/utils/trpc';
+import toast from 'react-hot-toast';
 
-// Assuming you have your trpco client setup like this
-// import { trpco } from '../utils/trpco'; // Adjust path as needed
-
-// --- Placeholder for trpco types ---
-// You should replace these with your actual types from your trpco router
-
+interface UserRoleObject {
+  name: string;
+  id: number; 
+}
 interface User {
   id: string;
   name: string | null;
   email: string | null;
-  role: "Guest"|"Admin"|"Moderator"; // Example field
- 
-}
-interface CreateUserInput {
-  name: string;
-  email: string;
-  role: "Guest"|"Admin"|"Moderator";
-  // Add other fields as necessary
-}
-
-interface UpdateUserInput extends Partial<CreateUserInput> {
-  id: string;
-}
-// --- End Placeholder for trpco types ---
-
-
-// --- Placeholder for trpco hooks (replace with your actual trpco hooks) ---
-const trpco = {
-  user: {
-
-       update: {
-      useMutation: ({ onSuccess, onError }: { onSuccess?: (data: User) => void, onError?: (error: Error) => void } = {}) => {
-        // This is a mock implementation. Replace with your actual trpco hook.
-        const [isLoading, setIsLoading] = useState(false);
-        const mutate = async (input: UpdateUserInput) => {
-          setIsLoading(true);
-          console.log('Updating user:', input);
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const updatedUser: User = { ...input, name: input.name || "Updated Name", email: input.email || "updated@example.com", role: input.role || "Guest",  };
-          setIsLoading(false);
-          if (Math.random() > 0.1) { // Simulate success
-            onSuccess?.(updatedUser);
-            return updatedUser;
-          } else { // Simulate error
-            const err = new Error("Failed to update user");
-            onError?.(err);
-            throw err;
-          }
-        };
-        return { mutate, isLoading };
-      }
-    },
-    delete: {
-      useMutation: ({ onSuccess, onError }: { onSuccess?: (data: { id: string }) => void, onError?: (error: Error) => void } = {}) => {
-        // This is a mock implementation. Replace with your actual trpco hook.
-        const [isLoading, setIsLoading] = useState(false);
-        const mutate = async (id: string) => {
-          setIsLoading(true);
-          console.log('Deleting user:', id);
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setIsLoading(false);
-          if (Math.random() > 0.1) { // Simulate success
-            onSuccess?.({ id });
-            return { id };
-          } else { // Simulate error
-            const err = new Error("Failed to delete user");
-            onError?.(err);
-            throw err;
-          }
-        };
-        return { mutate, isLoading };
-      }
-    }
-  }
-};
-// --- End Placeholder for trpco hooks ---
-
+  role: UserRoleObject |string; // Example field
+ }
 
 // Define the type for the form data
 type UserFormData = {
   name: string;
   email: string;
-  role: "Guest"|"Admin"|"Moderator";  // Adjust based on your roles
-  // Add other fields as necessary
+  role: string;  
 };
 
 const UserManagementPage: NextPage = () => {
@@ -103,21 +32,21 @@ const UserManagementPage: NextPage = () => {
   // State for managing modals and selected user
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [formData, setFormData] = useState<UserFormData>({ name: '', email: '', role:"Guest"});
+  const [formData, setFormData] = useState<UserFormData>({ name: '', email: '', role: "" });
 
-  // trpco queries and mutations
-  // Replace with your actual trpco hooks
-  const { data: userso, isLoading: isLoadingUsers, error: usersError, refetch: refetchUsers } = trpc.user.getAllUsers.useQuery();
+  // trpc queries and mutations
+   const { data: users, isLoading: isLoadingUsers, error: usersError, refetch: refetchUsers } = trpc.user.getAllUsers.useQuery();
 
   const createUserMutation = trpc.user.addNewUser.useMutation({
+  
     onSuccess: () => {
       refetchUsers();
       setIsModalOpen(false);
-      // Add toast notification for success
+       toast.success('User created successfully!');
     },
     onError: (error) => {
       console.error('Failed to create user:', error);
-      // Add toast notification for error
+          toast.error('Failed to create user.');
     },
   });
 
@@ -126,47 +55,37 @@ const UserManagementPage: NextPage = () => {
       refetchUsers();
       setIsModalOpen(false);
       setEditingUser(null);
-      // Add toast notification for success
+      toast.success('User updated successfully!');
     },
     onError: (error) => {
       console.error('Failed to update user:', error);
-      // Add toast notification for error
+      toast.error('Failed to update user.');    
     },
   });
 
-  const deleteUserMutation = trpco.user.delete.useMutation({
+  const deleteUserMutation = trpc.user.deleteUser.useMutation({
     onSuccess: () => {
       refetchUsers();
-      // Add toast notification for success
+      toast.success('User deleted successfully!');
     },
     onError: (error) => {
       console.error('Failed to delete user:', error);
-      // Add toast notification for error
+      toast
     },
   });
 
-  // Effect to populate form when editingUser changes
-  useEffect(() => {
-    if (editingUser) {
-      setFormData({
-        name: editingUser.name || '',
-        email: editingUser.email || '',
-        role: editingUser.role || 'Guest', // Default to 'Guest' if role is not set
-      });
-    } else {
-      setFormData({ name: '', email: '', role:"Guest"}); // Reset for new user
-    }
-  }, [editingUser]);
+
 
   // Handle opening modal for creating a new user
   const handleAddNewUser = () => {
     setEditingUser(null); // Ensure no user is being edited
-    setFormData({ name: '', email: '', role: "Guest" }); // Reset form
+    setFormData({ name: '', email: '', role: "" }); // Reset form
     setIsModalOpen(true);
   };
 
   // Handle opening modal for editing an existing user
   const handleEditUser = (user: any) => {
+    setFormData({ name: user.name || '', email: user.email || '', role: user.role.name || '' }); // Populate form with user data  
     setEditingUser(user);
     setIsModalOpen(true);
   };
@@ -175,9 +94,9 @@ const UserManagementPage: NextPage = () => {
   const handleDeleteUser = async (userId: string) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await deleteUserMutation.mutate(userId);
+         deleteUserMutation.mutate(userId);
       } catch (error) {
-        // Error is handled by onError in useMutation
+        
       }
     }
   };
@@ -188,15 +107,43 @@ const UserManagementPage: NextPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Fetch roles from trpc
+const { data: rolesFromTrpc, isLoading: isLoadingRoles, error: rolesError } = trpc.user.getRoles.useQuery();
+
+const getRoleId = (roleName: string): number => {
+  const DEFAULT_FALLBACK_ID = 0;
+
+  if (!rolesFromTrpc) {
+    // Roles not loaded yet, fallback
+    return DEFAULT_FALLBACK_ID;
+  }
+
+  const foundRole = rolesFromTrpc.find(backendRole => backendRole.name === roleName);
+
+  if (foundRole) {
+    return foundRole.id;
+  } else {
+    console.warn(
+      `Role "${roleName}" was not found in the data from trpc.users.roles. ` +
+      `Returning fallback ID: ${DEFAULT_FALLBACK_ID}.`
+    );
+    return DEFAULT_FALLBACK_ID;
+  }
+};
+
   // Handle form submission (create or update)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingUser) {
       // Update user
-      await updateUserMutation.mutate({ id: editingUser.id, ...formData });
+       updateUserMutation.mutate({ id: String(editingUser.id), ...formData, roleId: getRoleId(formData.role) });
     } else {
       // Create user
-      createUserMutation.mutate(formData);
+      createUserMutation.mutate({
+        name: formData.name,
+        email: formData.email,
+        roleId: getRoleId(formData.role),
+      });
     }
   };
 
@@ -205,7 +152,7 @@ const UserManagementPage: NextPage = () => {
     return <div className="flex justify-center items-center h-screen"><FaSpinner className="animate-spin text-4xl text-blue-500" /> <p className="ml-2">Loading session...</p></div>;
   }
 
-  if (!session || session.user?.role !== 'Moderator') { // Example: Restrict to Admin role
+  if (!session || session.user?.role !== 'Admin') { // Example: Restrict to Admin role
     return <div className="text-center py-10">Access Denied. You must be an Admin to manage users.</div>;
   }
 
@@ -235,7 +182,7 @@ const UserManagementPage: NextPage = () => {
       )}
       {usersError && <div className="text-red-500 bg-red-100 p-4 rounded-lg">Error loading users: {usersError.message}</div>}
       
-      {!isLoadingUsers && !usersError && userso && (
+      {!isLoadingUsers && !usersError && users && (
         <div className="bg-white shadow-xl rounded-lg overflow-x-auto">
           <table className="min-w-full leading-normal">
             <thead className="bg-gray-100">
@@ -258,12 +205,12 @@ const UserManagementPage: NextPage = () => {
               </tr>
             </thead>
             <tbody>
-              {userso.length === 0 && (
+              {users.length === 0 && (
                 <tr>
                   <td colSpan={5} className="text-center py-10 text-gray-500">No users found.</td>
                 </tr>
               )}
-              {userso.map((user) => (
+              {users.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition duration-150">
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
                     <p className="text-gray-900 whitespace-no-wrap">{user.name || 'N/A'}</p>
@@ -273,11 +220,15 @@ const UserManagementPage: NextPage = () => {
                   </td>
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
                     <span className={`px-2 py-1 font-semibold leading-tight rounded-full text-xs ${
-                        user.role === 'Admin' ? 'bg-red-100 text-red-700' : 
-                        user.role === 'Moderator' ? 'bg-yellow-100 text-yellow-700' :
+                        user.role?.name === 'Admin' ? 'bg-red-100 text-red-700' : 
+                        user.role?.name === 'Moderator' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-green-100 text-green-700'
                       }`}>
-                      {user.role}
+                      {typeof user.role === 'object' && user.role !== null
+                        ? user.role.name
+                        : typeof user.role === 'string'
+                        ? user.role
+                        : 'N/A'}
                     </span>
                   </td>
                   <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
@@ -294,12 +245,12 @@ const UserManagementPage: NextPage = () => {
                         <FaEdit size={18}/>
                       </button>
                       <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        disabled={deleteUserMutation.isLoading && editingUser?.id === user.id} // Disable if this user is being deleted
+                        onClick={() => handleDeleteUser(String(user.id))}
+                         // Disable if this user is being deleted
                         className="text-red-600 hover:text-red-800 transition duration-150 p-1 rounded-md hover:bg-red-100 disabled:opacity-50"
                         aria-label="Delete user"
                       >
-                        {deleteUserMutation.isLoading && editingUser?.id === user.id ? <FaSpinner className="animate-spin"/> : <FaTrash size={18}/>}
+                       <FaTrash size={18}/>
                       </button>
                     </div>
                   </td>
@@ -345,17 +296,18 @@ const UserManagementPage: NextPage = () => {
               </div>
               <div className="mb-6">
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select
-                  name="role"
-                  id="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value="Guest">Guest</option>
-                  <option value="Moderator">Moderator</option>
-                  <option value="Admin">Admin</option>
-                </select>
+               <select
+                  name="role" // This will store the rolename or roleId depending on your setup
+                  value={formData.role} // formData.role could store the rolename or roleId
+                   onChange={handleInputChange}
+                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                      <option value="" >Select Role</option>
+      {rolesFromTrpc?.map(role => (
+        <option key={role.id} value={role.name}> {/* Or value={role.id} */}
+          {role.name}
+        </option>
+      ))}               
+                           </select>
               </div>
 
               {/* Form Actions */}
@@ -387,9 +339,6 @@ const UserManagementPage: NextPage = () => {
   );
 };
 
-// You might want to protect this page, e.g., by requiring authentication
-// UserManagementPage.auth = true; // Example if you have a per-page auth setup
-// Or handle it within the component using useSession
 
 export default UserManagementPage;
 

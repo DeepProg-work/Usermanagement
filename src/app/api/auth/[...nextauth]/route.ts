@@ -28,12 +28,12 @@ export const {
         // Query database to get role during sign-in
         const dbUser = await db.query.users.findFirst({
           where: eq(users.email, token.email),
-          columns: { role: true },
+          columns: { roleId: true },
         });
-        console.log("DB User: ", dbUser?.role); // Debugging line
+        console.log("DB User: ", dbUser?.roleId); // Debugging line
         // Check if user exists in the database
         if (dbUser) {
-          token.role = dbUser.role; // Store role in JWT
+          token.role = dbUser.roleId; // Store role in JWT
         } else {
           token.role = "guest"; // Fallback role
         }
@@ -46,13 +46,28 @@ export const {
           // Check if user exists in the database
           const dbUser = await db.query.users.findFirst({
             where: eq(users.email, user.email),
-            columns: { role: true },
-          });
+          columns: {
+    // Select the columns you need from the 'users' table
+    id: true,
+    name: true,
+    email: true,
+    roleId: true, // You can still select roleId if needed
+    
+  },
+  with: {
+    role: { // 'role' here must match the name of the relation in your Drizzle schema
+            // (e.g., in usersRelations, it might be: role: one(roles, ...))
+      columns: {
+        name: true, // This will fetch the 'name' column from the related 'roles' table
+        // id: true, // Optionally, if you also need the role's ID from the roles table
+      }
+    }
+                  }          });
           
           if (dbUser) {
-            token.role = dbUser.role; // Store role in JWT
+            token.role = dbUser.role?.name; // Store role in JWT
           } else {
-            token.role = "guest"; // Fallback role
+            token.role = "Guest"; // Fallback role
           }
         }
       } 
