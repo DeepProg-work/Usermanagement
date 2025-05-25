@@ -28,11 +28,29 @@ CREATE TABLE `authenticator` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `authenticator_credentialID_unique` ON `authenticator` (`credentialID`);--> statement-breakpoint
+CREATE TABLE `roles` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`name` text NOT NULL,
+	`description` text,
+	`created_at` integer DEFAULT (strftime('%s', 'now')) NOT NULL,
+	`updated_at` integer DEFAULT (strftime('%s', 'now')) NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `roles_name_unique` ON `roles` (`name`);--> statement-breakpoint
 CREATE TABLE `session` (
 	`sessionToken` text PRIMARY KEY NOT NULL,
 	`userId` text NOT NULL,
 	`expires` integer NOT NULL,
 	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `user_roles` (
+	`user_id` text NOT NULL,
+	`role_id` integer NOT NULL,
+	`assigned_at` integer DEFAULT (strftime('%s', 'now')) NOT NULL,
+	PRIMARY KEY(`user_id`, `role_id`),
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `user` (

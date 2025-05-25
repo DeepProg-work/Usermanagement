@@ -12,18 +12,75 @@ import { type AdapterAccount } from "next-auth/adapters";
 
 
  
+export const roles =  sqliteTable('roles', {
+
+id: integer('id').primaryKey({ autoIncrement: true }),
+
+name: text('name').notNull().unique(),
+
+description: text('description'),
+
+createdAt: integer('created_at', { mode: 'timestamp' })
+
+.default(sql`(strftime('%s', 'now'))`)
+
+.notNull(),
+
+updatedAt: integer('updated_at', { mode: 'timestamp' })
+
+.default(sql`(strftime('%s', 'now'))`)
+
+.notNull(),
+
+});
+
+
+
+// --- USER AUTHENTICATION TABLES ---
+
 export const users = sqliteTable("user", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: text("name"),
-  email: text("email").unique(),
-  emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
-  image: text("image"),
-  role: text("role", { enum: ["Admin", "Moderator", "Guest"] })
-    .notNull()
-    .default("Guest"),
-})
+
+id: text("id")
+
+.primaryKey()
+
+.$defaultFn(() => crypto.randomUUID()),
+
+name: text("name"),
+
+email: text("email").unique(),
+
+emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
+
+image: text("image"),
+
+// roleId: integer("role_id").references(() => roles.id), // REMOVED: User's global/default role
+
+});
+
+
+
+// --- NEW JUNCTION TABLE FOR USER ROLES (MANY-TO-MANY) ---
+
+export const userRoles = sqliteTable('user_roles', {
+
+userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+roleId: integer('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
+
+// You can add other fields here if needed, e.g., assignedBy, context
+
+assignedAt: integer('assigned_at', { mode: 'timestamp' })
+
+.default(sql`(strftime('%s', 'now'))`)
+
+.notNull(),
+
+}, (ur) => ({
+
+compoundKey: primaryKey({ columns: [ur.userId, ur.roleId] }),
+
+}));
  
 export const accounts = sqliteTable(
   "account",

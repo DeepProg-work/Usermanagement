@@ -2,10 +2,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import ProfileDropdown from '../ProfileDropdown/page';
+import { useAuthWithRoles } from '@/hooks/useAuthWithRoles';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-
+  const { data: session, status, checkRole, userRoles } = useAuthWithRoles();
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
@@ -30,11 +31,12 @@ export default function Navbar() {
               <Link href="/about" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
                 About
               </Link>
-              <Link href="/services" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
-                Services
-              </Link>
-              <Link href="/contact" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
-                Contact
+            {checkRole("GUEST") &&
+              <Link href="/users" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
+                Users
+              </Link>}
+              <Link href="/roles" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
+                Roles
               </Link>
                <ProfileDropdown />
             </div>
