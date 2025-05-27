@@ -45,7 +45,7 @@ export const usersRouter = router({
     return usersWithRoles;
   }),
 
-getById: publicProcedure
+getById: adminProtectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       // Fetch user
@@ -97,7 +97,7 @@ getRoleById: publicProcedure
       };
     }),
 
-  create: publicProcedure
+  create: adminProtectedProcedure
     .input(userInputSchema)
     .mutation(async ({ input, ctx }) => { // Assuming ctx provides db
       const { roleIds, ...userData } = input;
@@ -161,7 +161,7 @@ getRoleById: publicProcedure
     }),
 
 
-  update: publicProcedure
+  update: adminProtectedProcedure
     .input(userInputSchema.extend({ id: z.string() })) // ID is required for update
     .mutation(async ({ input, ctx }) => { // Assuming ctx provides db
       const { id, roleIds, ...userData } = input;

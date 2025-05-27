@@ -11,6 +11,69 @@ export default function Navbar() {
     setIsOpen(!isOpen);
   };
 
+interface NavItem {
+  href: string;
+  label: string;
+  /**
+   * If undefined, the item is public.
+   * If an empty array [], the item is for any authenticated user.
+   * If an array of role strings (e.g., ['admin', 'editor']),
+   * the user must have at least one of these roles.
+   * Roles in this array should ideally be lowercase for consistent checking with checkRole.
+   */
+  allowedRoles?: string[];
+}
+
+// Define your navigation items based on your snippet
+// (place this inside your Navbar component, or pass it as a prop)
+const navLinkItems: NavItem[] = [
+  { href: '/', label: 'Home' }, // Public
+  { href: '/about', label: 'About' }, // Public
+  { href: '/users', label: 'Users',allowedRoles: ['admin'] },
+  { href: '/roles',label: 'Roles', allowedRoles: ['admin']},
+  
+];
+
+// This function will render the links based on the navLinkItems and roles
+// (place this function inside your Navbar component or make it a helper)
+const renderDesktopNavLinks = () => {
+  // Ensure 'status' and 'checkRole' are accessible here from useAuthWithRoles
+  // This example assumes they are in the same scope (e.g., Navbar component scope)
+
+  return navLinkItems.map((item) => {
+    let canShowItem = false;
+
+    if (item.allowedRoles === undefined) {
+      // Public item, always show
+      canShowItem = true;
+    } else if (status === 'authenticated') { // 'status' from useAuthWithRoles
+      if (item.allowedRoles.length === 0) {
+        // Item requires authentication, but no specific roles
+        canShowItem = true;
+      } else {
+        // Item requires one of the specified roles
+        // 'checkRole' from useAuthWithRoles
+        canShowItem = item.allowedRoles.some(role => checkRole(role));
+      }
+    }
+
+    if (canShowItem) {
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700" // Class from your snippet
+        >
+          {item.label}
+        </Link>
+      );
+    }
+    return null; // Don't render the item if conditions are not met
+  });
+};
+  
+
+
   return (
     <nav className="  bg-blue-400 text-white sticky top-0 left-0  z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,19 +88,7 @@ export default function Navbar() {
           {/* Desktop Menu */}
           <div className="hidden md:block">
             <div className="ml-4  flex items-baseline gap-8">
-              <Link href="/" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
-                Home
-              </Link>
-              <Link href="/about" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
-                About
-              </Link>
-            {checkRole("GUEST") &&
-              <Link href="/users" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
-                Users
-              </Link>}
-              <Link href="/roles" className="px-8 py-2 rounded-md text-sm font-medium hover:bg-gray-700">
-                Roles
-              </Link>
+            {renderDesktopNavLinks()} 
                <ProfileDropdown />
             </div>
           </div>
@@ -69,35 +120,37 @@ export default function Navbar() {
       {isOpen && (
         <div className="md:hidden" id="mobile-menu">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link
-              href="/"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700"
-              onClick={toggleMenu}
-            >
-              Home
-            </Link>
-            <Link
-              href="/about"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700"
-              onClick={toggleMenu}
-            >
-              About
-            </Link>
-            <Link
-              href="/services"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700"
-              onClick={toggleMenu}
-            >
-              Services
-            </Link>
-            <Link
-              href="/contact"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700"
-              onClick={toggleMenu}
-            >
-              Contact
-            </Link>
-             <ProfileDropdown />
+           {navLinkItems.map((item: NavItem) => { // Added NavItem type for clarity
+    let canShowItem = false;
+
+    // Determine if the item should be shown based on roles and auth status
+    if (item.allowedRoles === undefined) { // Public item
+      canShowItem = true;
+    } else if (status === 'authenticated') { // Check authentication status
+      if (item.allowedRoles.length === 0) { // Authenticated users, no specific role needed
+        canShowItem = true;
+      } else { // Specific roles required
+        canShowItem = item.allowedRoles.some(role => checkRole(role));
+      }
+    }
+
+    // Render the link if conditions are met
+    if (canShowItem) {
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700" // Class from your mobile snippet
+          onClick={toggleMenu} // Call toggleMenu when a mobile link is clicked
+        >
+          {item.label}
+        </Link>
+      );
+    }
+    return null; // Otherwise, don't render this menu item
+  })}
+  
+              <ProfileDropdown />
           </div>
         </div>
       )}

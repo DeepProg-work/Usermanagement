@@ -1,8 +1,9 @@
 // src/app/(admin)/roles/_components/RoleTable.tsx
 'use client';
 
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import React from 'react';
-
+import { toast } from 'sonner'; 
 // Define the structure for a Role item in the list
 // This should match the data structure returned by your trpc.role.getAll query
 interface RoleFromList {
@@ -78,7 +79,7 @@ export function RoleTable({ roles, onEdit, onDelete }: RoleTableProps) {
                   // Using purple to match the "Add New Role" button from RolesPage
                   className="text-purple-600 hover:text-purple-900"
                 >
-                  Edit
+                  <PencilSquareIcon className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => {
@@ -88,7 +89,7 @@ export function RoleTable({ roles, onEdit, onDelete }: RoleTableProps) {
                   }}
                   className="text-red-600 hover:text-red-900"
                 >
-                  Delete
+                                    <TrashIcon className="h-5 w-5" />
                 </button>
               </td>
             </tr>

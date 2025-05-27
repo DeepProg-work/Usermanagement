@@ -5,6 +5,7 @@ import { trpc } from '@/utils/trpc';
 // You'll need to create these components similar to UserForm and UserTable
 import { RoleForm } from './components/RoleForm';
 import { RoleTable } from './components/RoleTable';
+import { toast } from 'sonner';
 
 // Define the structure for the data passed to the RoleForm, especially for editing.
 interface RoleDataForForm {
@@ -47,10 +48,10 @@ export default function RolesPage() {
   const deleteRoleMutation = trpc.user.deleteRole.useMutation({
     onSuccess: () => {
       refetchRolesList();
-      alert('Role deleted successfully');
+     toast.success(`Role deleted successfully`);
     },
     onError: (error: { message: any }) =>
-      alert(`Error deleting role: ${error.message}`),
+      toast.error(`Error deleting role: ${error.message}`),
   });
 
   const handleOpenFormForCreate = () => {
@@ -69,9 +70,9 @@ export default function RolesPage() {
   };
 
   const handleDeleteRole = (roleId: number) => {
-    if (window.confirm('Are you sure you want to delete this role?')) {
+  
       deleteRoleMutation.mutate({ id: roleId });
-    }
+    
   };
 
   // Transform roleToEditData to match RoleDataForForm

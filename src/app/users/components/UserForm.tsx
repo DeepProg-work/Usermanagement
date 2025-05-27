@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { trpc } from '@/utils/trpc';
 import React from 'react';
 import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 
  const userInputSchema = z.object({
   id: z.string().optional(), // Optional for creation
@@ -82,7 +83,7 @@ console.log('UserForm initialData:', initialData);
       utils.user.getAllWithRoles.invalidate();
       onFormSubmit();
     },
-    onError: (error: { message: any }) => alert(`Error creating user: ${error.message}`),
+    onError: (error: { message: any }) =>toast.error(`Error creating user: ${error.message}`),
   });
 const { update } = useSession();
 const updateUserMutation = trpc.user.update.useMutation({
@@ -93,7 +94,7 @@ const updateUserMutation = trpc.user.update.useMutation({
       }
       
      try {
-      alert('User updated successfully');
+      toast.success('User updated successfully');
       console.log("Calling update...");
       await update({ role: 'ghhhh' }); // This should trigger the jwt callback with "update"
       console.log("Update completed");
@@ -102,7 +103,7 @@ const updateUserMutation = trpc.user.update.useMutation({
     }
       onFormSubmit();
     },
-    onError: (error: { message: any }) => alert(`Error updating user: ${error.message}`),
+    onError: (error: { message: any }) => toast.error(`Error updating user: ${error.message}`),
   });
 
   const onSubmit = (data: UserFormValues) => {

@@ -23,7 +23,7 @@ export const protectedProcedure = publicProcedure.use(async (opts) => {
   return opts.next({ ...opts, ctx: { user: session.user } });
 });
 
-export const adminProtectedProcedure = publicProcedure.use(async (opts) => {
+export const adminProtectedProcedure = protectedProcedure.use(async (opts) => {
   const session = await auth();
 
   if (!session?.user?.email) {

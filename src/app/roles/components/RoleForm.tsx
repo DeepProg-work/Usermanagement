@@ -6,6 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { trpc } from '@/utils/trpc';
 import React from 'react';
+import { toast } from 'sonner';
 
 // Zod schema for role input
 const roleInputSchema = z.object({
@@ -69,10 +70,10 @@ export function RoleForm({ initialData, onFormSubmit }: RoleFormProps) {
     onSuccess: () => {
       utils.user.getAllRoles.invalidate();
       onFormSubmit();
-      alert('Role created successfully');
+      toast.success('Role created successfully');
     },
     onError: (error: { message: any }) =>
-      alert(`Error creating role: ${error.message}`),
+      toast.error(`Error creating role: ${error.message}`),
   });
 
   const updateRoleMutation = trpc.user.updateRole.useMutation({
@@ -82,10 +83,10 @@ export function RoleForm({ initialData, onFormSubmit }: RoleFormProps) {
         utils.user.getRoleById.invalidate({ id: String(initialData.id) });
       }
       onFormSubmit();
-      alert('Role updated successfully');
+      toast.success('Role updated successfully');
     },
     onError: (error: { message: any }) =>
-      alert(`Error updating role: ${error.message}`),
+      toast.error(`Error updating role: ${error.message}`),
   });
 
   const onSubmit = (data: RoleFormValues) => {

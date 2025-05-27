@@ -1,6 +1,6 @@
 // src/app/(admin)/users/_components/UserTable.tsx
 'use client';
-
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 interface UserFromList { // As returned by getAllWithRoles
   id: string;
   name: string | null;
@@ -39,7 +39,7 @@ export function UserTable({ users, onEdit, onDelete }: UserTableProps) {
                 {user.roles.length > 0 ? user.roles.map(role => role.name).join(', ') : 'No roles'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                <button onClick={() => onEdit(user.id)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                <button onClick={() => onEdit(user.id)} className="text-indigo-600 hover:text-indigo-900"> <PencilSquareIcon className="h-5 w-5" /></button>
                 <button
                   onClick={() => {
                     if (window.confirm(`Are you sure you want to delete ${user.name || user.email}?`)) {
@@ -48,7 +48,7 @@ export function UserTable({ users, onEdit, onDelete }: UserTableProps) {
                   }}
                   className="text-red-600 hover:text-red-900"
                 >
-                  Delete
+                   <TrashIcon className="h-5 w-5" />
                 </button>
               </td>
             </tr>

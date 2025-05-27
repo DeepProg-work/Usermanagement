@@ -7,6 +7,7 @@ import { UserForm } from './components/UserForm';
 import { UserTable } from './components/UserTable';
 import { useSession } from 'next-auth/react';
 import { useAuthWithRoles } from '@/hooks/useAuthWithRoles'
+import { toast } from 'sonner';
 interface UserDataForForm { // Data structure if fetching a single user for edit
     id: string;
     name: string | null;
@@ -38,9 +39,9 @@ export default function UsersPage() {
   const deleteUserMutation = trpc.user.delete.useMutation({
     onSuccess: () => {
       refetchUsers();
-      alert('User deleted successfully');
+      toast.success('User deleted successfully');
     },
-    onError: (error: { message: any }) => alert(`Error deleting user: ${error.message}`),
+    onError: (error: { message: any }) => toast.error(`Error deleting user: ${error.message}`),
   });
 
   const handleOpenFormForCreate = () => {
