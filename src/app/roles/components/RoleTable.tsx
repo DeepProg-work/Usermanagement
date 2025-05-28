@@ -1,9 +1,10 @@
 // src/app/(admin)/roles/_components/RoleTable.tsx
 'use client';
 
+import ConfirmationDialog from '@/components/modals/ConfirmationModal';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
-import React from 'react';
-import { toast } from 'sonner'; 
+import React, { useState } from 'react';
+
 // Define the structure for a Role item in the list
 // This should match the data structure returned by your trpc.role.getAll query
 interface RoleFromList {
@@ -21,6 +22,31 @@ interface RoleTableProps {
 }
 
 export function RoleTable({ roles, onEdit, onDelete }: RoleTableProps) {
+  
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [roleToProcess, setRoleToProcess] = useState<RoleFromList | null>(null);
+
+  const openDeleteDialog = (role: RoleFromList) => {
+    setRoleToProcess(role);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setIsDeleteDialogOpen(false);
+    setRoleToProcess(null); // Clear the role after closing
+  };
+
+  const handleConfirmDelete = () => {
+    if (roleToProcess) {
+      onDelete(roleToProcess.id); // Call the original onDelete prop
+    }
+    closeDeleteDialog(); // Close the dialog after action
+  };
+  
+  
+  
+  
+  
   if (!roles || roles.length === 0) {
     return <p className="text-gray-500 py-4 text-center">No roles found.</p>;
   }
@@ -42,7 +68,7 @@ export function RoleTable({ roles, onEdit, onDelete }: RoleTableProps) {
     }
   };
 
-  return (
+  return (<>
     <div className="overflow-x-auto shadow-md sm:rounded-lg">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
@@ -74,21 +100,20 @@ export function RoleTable({ roles, onEdit, onDelete }: RoleTableProps) {
                 {formatDate(role.createdAt)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                <button
-                  onClick={() => onEdit(role.id)}
-                  // Using purple to match the "Add New Role" button from RolesPage
-                  className="text-purple-600 hover:text-purple-900"
-                >
+              <button
+                    onClick={() => onEdit(role.id)}
+                    className="text-purple-600 hover:text-purple-900 p-1 rounded-md hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-500"
+                    title="Edit Role"
+                    aria-label="Edit Role"
+                  >
                   <PencilSquareIcon className="h-5 w-5" />
                 </button>
                 <button
-                  onClick={() => {
-                    if (window.confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
-                      onDelete(role.id);
-                    }
-                  }}
-                  className="text-red-600 hover:text-red-900"
-                >
+                    onClick={() => openDeleteDialog(role)} // <--- MODIFIED HERE
+                    className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500"
+                    title="Delete Role"
+                    aria-label="Delete Role"
+                  >
                                     <TrashIcon className="h-5 w-5" />
                 </button>
               </td>
@@ -97,5 +122,32 @@ export function RoleTable({ roles, onEdit, onDelete }: RoleTableProps) {
         </tbody>
       </table>
     </div>
+
+        
+      {/* Confirmation Dialog for Deleting a Role */}
+      {roleToProcess && (
+        <ConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={closeDeleteDialog}
+          onConfirm={handleConfirmDelete}
+          title="Confirm Role Deletion"
+          message={
+            <>
+              Are you sure you want to delete the role "<strong>{roleToProcess.name}</strong>"?
+              <br />
+              This action cannot be undone.
+            </>
+          }
+          confirmButtonText="Delete Role"
+          confirmButtonColor="red"
+        />
+      )}
+    
+
+
+
+</>
   );
+
+  
 }

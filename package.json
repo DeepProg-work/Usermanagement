@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",
-    "@headlessui/react": "^2.2.2",
+    "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.0.1",
     "@libsql/client": "^0.15.4",
