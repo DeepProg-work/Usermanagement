@@ -46,7 +46,6 @@ export function RoleTable({ roles, onEdit, onDelete }: RoleTableProps) {
   
   
   
-  
   if (!roles || roles.length === 0) {
     return <p className="text-gray-500 py-4 text-center">No roles found.</p>;
   }

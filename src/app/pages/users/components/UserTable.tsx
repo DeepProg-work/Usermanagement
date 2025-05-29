@@ -1,7 +1,7 @@
 // src/app/(admin)/users/_components/UserTable.tsx
 'use client';
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
-import ConfirmationModal from '@/components/modals/ConfirmationModal';
+
 import { useState } from 'react';
 import ConfirmationDialog from '@/components/modals/ConfirmationModal';
 interface UserFromList { // As returned by getAllWithRoles

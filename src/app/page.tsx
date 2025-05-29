@@ -1,9 +1,9 @@
 // app/page.tsx
 "use client";
-import { trpc } from "@/utils/trpc";
-import SignIn from "@/components/login/page";
-import SignOutPage from "@/components/logout/page";
+
 import { useSession } from "next-auth/react";
+import ThreeScene from "./components/threeJs/firstexample";
+
 
 
 export default  function Home() {
@@ -21,25 +21,30 @@ export default  function Home() {
     <div>
       
       <p>{sessionstatus}</p>
+    
+               
       </div>
      );}
    else{
      return (
       <div>
        
-
+     
         <section className="bg-gray-100 py-20">
+       
+    
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Welcome to Our Product</h1>
           <p className="text-lg md:text-xl text-gray-600 mb-8"> {sessionstatus}</p>
         <p>Welcome, {session?.user?.name}!</p>
         <p>Role: {session.user?.role}</p>
+        <ThreeScene />
 
 
+   
        
         </div>
       </section>
-
       {/* Features Section */}
       <section className="bg-gray-100 py-20">
         <div className="container mx-auto px-4">

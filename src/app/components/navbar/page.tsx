@@ -28,9 +28,9 @@ interface NavItem {
 // (place this inside your Navbar component, or pass it as a prop)
 const navLinkItems: NavItem[] = [
   { href: '/', label: 'Home' }, // Public
-  { href: '/about', label: 'About' }, // Public
-  { href: '/users', label: 'Users',allowedRoles: ['admin'] },
-  { href: '/roles',label: 'Roles', allowedRoles: ['admin']},
+  { href: '/pages/sorting', label: 'Sorting' }, // Public
+  { href: '/pages/users', label: 'Users',allowedRoles: ['admin'] },
+  { href: '/pages/roles',label: 'Roles', allowedRoles: ['admin']},
   
 ];
 
