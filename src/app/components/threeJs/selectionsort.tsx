@@ -18,7 +18,7 @@ const SORTED_COLOR = new THREE.Color(0x2ecc71);  // Green for the sorted part
 const ANIMATION_DELAY_MS = 600;
 
 // --- Selection Sort Pseudocode ---
-const SELECTION_SORT_CODE = [
+const SELECTION_SORT_PSEUDO_CODE = [ // Renamed for clarity
   /* 0 */ "function selectionSort(arr) {",
   /* 1 */ "  let n = arr.length;",
   /* 2 */ "  for (let i = 0; i < n - 1; i++) {",
@@ -41,15 +41,46 @@ const SELECTION_SORT_CODE = [
   /* 19 */ "}",
 ];
 
+// --- Selection Sort C Program ---
+const C_SELECTION_SORT_CODE = [
+  /* 0 */ "void swap(int *xp, int *yp) {", // Utility function
+  /* 1 */ "  int temp = *xp;",
+  /* 2 */ "  *xp = *yp;",
+  /* 3 */ "  *yp = temp;",
+  /* 4 */ "}",
+  /* 5 */ "",
+  /* 6 */ "void selectionSort(int arr[], int n) {",
+  /* 7 */ "  int i, j, min_idx;",
+  /* 8 */ "",
+  /* 9 */ "  // One by one move boundary of unsorted subarray",
+  /* 10 */ "  for (i = 0; i < n-1; i++) {",
+  /* 11 */ "    // Find the minimum element in unsorted array",
+  /* 12 */ "    min_idx = i;",
+  /* 13 */ "    for (j = i+1; j < n; j++) {",
+  /* 14 */ "      // Compare current element with minimum",
+  /* 15 */ "      if (arr[j] < arr[min_idx])",
+  /* 16 */ "        min_idx = j; // Update min_idx",
+  /* 17 */ "    }",
+  /* 18 */ "",
+  /* 19 */ "    // Swap the found minimum element with the first element",
+  /* 20 */ "    // if it's not already in place",
+  /* 21 */ "    if (min_idx != i)",
+  /* 22 */ "      swap(&arr[min_idx], &arr[i]);",
+  /* 23 */ "  }",
+  /* 24 */ "}",
+];
+
+
 interface AnimationStep {
   array: number[];
-  sortedBoundary: number; // Elements arr[0...sortedBoundary-1] are sorted
-  outerLoopIndex_i?: number; // Current index 'i' of the outer loop
-  innerLoopIndex_j?: number; // Current index 'j' of the inner loop (scanning)
-  minIndex?: number;         // Current index of the minimum element found in the pass
-  elementsToSwap?: [number, number]; // Indices [i, minIndex] that will be swapped
+  sortedBoundary: number;
+  outerLoopIndex_i?: number;
+  innerLoopIndex_j?: number;
+  minIndex?: number;
+  elementsToSwap?: [number, number];
   done?: boolean;
-  highlightedCodeLine?: number | number[];
+  highlightedPseudoCodeLine?: number | number[]; // Renamed
+  highlightedCCodeLine?: number | number[];    // New
 }
 
 interface SelectionSortVisualizerProps {
@@ -120,6 +151,7 @@ const SelectionSortVisualizer: React.FC<SelectionSortVisualizerProps> = ({
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(-1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>("Click Start to visualize Selection Sort");
+  const [codeView, setCodeView] = useState<'pseudocode' | 'cProgram'>('pseudocode');
 
   const animationSteps = useMemo(() => {
     const arr = [...initialArray];
@@ -127,63 +159,87 @@ const SelectionSortVisualizer: React.FC<SelectionSortVisualizerProps> = ({
     const n = arr.length;
     let localArr = [...arr];
 
-    steps.push({ array: [...localArr], sortedBoundary: 0, highlightedCodeLine: [0, 1, 19] }); // Initial state
+    steps.push({
+      array: [...localArr], sortedBoundary: 0,
+      highlightedPseudoCodeLine: [0, 1, 19], // func, n, end }
+      highlightedCCodeLine: [6, 7, 9, 24]    // func, declarations, comment, end }
+    });
 
     for (let i = 0; i < n - 1; i++) {
-      steps.push({ array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, highlightedCodeLine: 2 }); // Outer loop start
+      steps.push({
+        array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i,
+        highlightedPseudoCodeLine: 2, // Outer loop
+        highlightedCCodeLine: 10      // Outer loop
+      });
       let minIndex = i;
-      steps.push({ array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, minIndex: minIndex, highlightedCodeLine: [3, 4] }); // minIndex = i
+      steps.push({
+        array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, minIndex: minIndex,
+        highlightedPseudoCodeLine: [3, 4], // Comment, minIndex = i
+        highlightedCCodeLine: [11, 12]     // Comment, min_idx = i
+      });
 
       for (let j = i + 1; j < n; j++) {
-        steps.push({ array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, minIndex: minIndex, innerLoopIndex_j: j, highlightedCodeLine: 5 }); // Inner loop start
+        steps.push({
+          array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, minIndex: minIndex, innerLoopIndex_j: j,
+          highlightedPseudoCodeLine: 5, // Inner loop
+          highlightedCCodeLine: 13      // Inner loop
+        });
         steps.push({ // Comparing
-          array: [...localArr],
-          sortedBoundary: i,
-          outerLoopIndex_i: i,
-          minIndex: minIndex,
-          innerLoopIndex_j: j,
-          highlightedCodeLine: [6, 7],
+          array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i,
+          minIndex: minIndex, innerLoopIndex_j: j,
+          highlightedPseudoCodeLine: [6, 7], // Comment, if
+          highlightedCCodeLine: [14, 15]     // Comment, if
         });
         if (localArr[j] < localArr[minIndex]) {
           minIndex = j;
           steps.push({ // New minIndex found
-            array: [...localArr],
-            sortedBoundary: i,
-            outerLoopIndex_i: i,
-            minIndex: minIndex, // New minIndex
-            innerLoopIndex_j: j,
-            highlightedCodeLine: 8,
+            array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i,
+            minIndex: minIndex, innerLoopIndex_j: j,
+            highlightedPseudoCodeLine: 8, // minIndex = j
+            highlightedCCodeLine: 16      // min_idx = j
           });
         }
       }
-      steps.push({ array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, minIndex: minIndex, highlightedCodeLine: 10 }); // End inner loop
+      steps.push({
+        array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, minIndex: minIndex,
+        highlightedPseudoCodeLine: 10, // End inner loop
+        highlightedCCodeLine: 17       // End inner loop
+      });
 
-      // Step to show if swap is needed or not
-      steps.push({ array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, minIndex: minIndex, elementsToSwap: minIndex !== i ? [i, minIndex] : undefined, highlightedCodeLine: [12,13,14] });
+      steps.push({ // Check if swap is needed
+        array: [...localArr], sortedBoundary: i, outerLoopIndex_i: i, minIndex: minIndex,
+        elementsToSwap: minIndex !== i ? [i, minIndex] : undefined,
+        highlightedPseudoCodeLine: [12,13,14], // Comments, if
+        highlightedCCodeLine: [19,20,21]       // Comments, if
+      });
 
       if (minIndex !== i) {
         [localArr[i], localArr[minIndex]] = [localArr[minIndex], localArr[i]];
         steps.push({ // Array after swap
-          array: [...localArr],
-          sortedBoundary: i + 1, // Element at i is now sorted
-          outerLoopIndex_i: i,
-          minIndex: i, // After swap, minIndex effectively becomes i for the sorted part
-          elementsToSwap: [i, minIndex], // Show what was swapped
-          highlightedCodeLine: 15,
+          array: [...localArr], sortedBoundary: i + 1, outerLoopIndex_i: i,
+          minIndex: i, // Conceptually, i is now the min for this sorted position
+          elementsToSwap: [i, minIndex],
+          highlightedPseudoCodeLine: 15,     // Swap line
+          highlightedCCodeLine: [22, 0,1,2,3,4] // Highlight swap call and the swap function
         });
       } else {
-        // No swap needed, element i was already the minimum
-         steps.push({
-          array: [...localArr],
-          sortedBoundary: i + 1,
-          outerLoopIndex_i: i,
-          minIndex: i,
-          highlightedCodeLine: 16, // Skip to end of if or next iteration
+         steps.push({ // No swap needed
+          array: [...localArr], sortedBoundary: i + 1, outerLoopIndex_i: i, minIndex: i,
+          highlightedPseudoCodeLine: 16, // Closing brace of if
+          highlightedCCodeLine: 22       // Line after if (or just the if condition again)
         });
       }
-      steps.push({ array: [...localArr], sortedBoundary: i + 1, highlightedCodeLine: 17 }); // End outer loop iteration
+      steps.push({
+        array: [...localArr], sortedBoundary: i + 1,
+        highlightedPseudoCodeLine: 17, // End outer loop iteration
+        highlightedCCodeLine: 23       // End outer loop iteration
+      });
     }
-    steps.push({ array: [...localArr], sortedBoundary: n, done: true, highlightedCodeLine: [18, 19] }); // Final sorted state
+    steps.push({
+      array: [...localArr], sortedBoundary: n, done: true,
+      highlightedPseudoCodeLine: [18, 19], // return, end }
+      highlightedCCodeLine: 24             // end }
+    });
     return steps;
   }, [initialArray]);
 
@@ -309,13 +365,13 @@ const SelectionSortVisualizer: React.FC<SelectionSortVisualizerProps> = ({
         targetColor = SORTED_COLOR;
       }
 
-      if (index === step.minIndex) {
+      if (index === step.minIndex && ! (step.done || index < step.sortedBoundary) ) { // Don't override if already sorted
         targetColor = MIN_VAL_COLOR;
       }
-      if (index === step.innerLoopIndex_j) {
+      if (index === step.innerLoopIndex_j && ! (step.done || index < step.sortedBoundary) ) {
         targetColor = SCAN_COLOR;
       }
-      if (step.elementsToSwap?.includes(index)) {
+      if (step.elementsToSwap?.includes(index)) { // SWAP_COLOR takes precedence
         targetColor = SWAP_COLOR;
       }
 
@@ -343,7 +399,10 @@ const SelectionSortVisualizer: React.FC<SelectionSortVisualizerProps> = ({
   const handleNextStep = () => { if (currentStepIndex < animationSteps.length - 1) { setIsPlaying(false); setCurrentStepIndex(prev => prev + 1); }};
   const handlePrevStep = () => { if (currentStepIndex > 0) { setIsPlaying(false); setCurrentStepIndex(prev => prev - 1); }};
 
-  const highlightedCode = animationSteps[currentStepIndex]?.highlightedCodeLine;
+  const currentStepData = animationSteps[currentStepIndex];
+  const highlightedCodeForDisplay = codeView === 'pseudocode'
+    ? currentStepData?.highlightedPseudoCodeLine
+    : currentStepData?.highlightedCCodeLine;
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '1rem' }}>
@@ -368,11 +427,20 @@ const SelectionSortVisualizer: React.FC<SelectionSortVisualizerProps> = ({
               <button onClick={handleReset} style={buttonStyle}>Reset</button>
             </div>
           </div>
-          <div style={{ flex: '1 1 400px', minWidth: '300px', maxHeight: '550px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            flex: '1 1 400px', minWidth: '300px', maxHeight: '550px',
+            display: 'flex', flexDirection: 'column', gap: '0.5rem'
+          }}>
+            <button
+              onClick={() => setCodeView(prev => prev === 'pseudocode' ? 'cProgram' : 'pseudocode')}
+              style={{ ...buttonStyle, backgroundColor: '#2980b9', alignSelf: 'flex-start', marginBottom: '0.5rem' }}
+            >
+              Show {codeView === 'pseudocode' ? 'C Program' : 'Pseudocode'}
+            </button>
             <CodeDisplay
-              codeLines={SELECTION_SORT_CODE}
-              highlightedLines={highlightedCode}
-              style={{ flexGrow: 1, overflowY: 'auto' }}
+              codeLines={codeView === 'pseudocode' ? SELECTION_SORT_PSEUDO_CODE : C_SELECTION_SORT_CODE}
+              highlightedLines={highlightedCodeForDisplay}
+              style={{ flexGrow: 1, overflowY: 'auto', maxHeight: 'calc(550px - 3rem)' /* Adjust based on button height */ }}
             />
           </div>
         </div>

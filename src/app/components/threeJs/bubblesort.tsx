@@ -17,7 +17,7 @@ const SORTED_COLOR = new THREE.Color(0x2ecc71);  // Green
 const ANIMATION_DELAY_MS = 600;
 
 // --- Bubble Sort Pseudocode ---
-const BUBBLE_SORT_CODE = [
+const BUBBLE_SORT_PSEUDO_CODE = [ // Renamed for clarity
   /* 0 */ "function bubbleSort(arr) {",
   /* 1 */ "  let n = arr.length;",
   /* 2 */ "  for (let i = 0; i < n - 1; i++) {",
@@ -39,6 +39,33 @@ const BUBBLE_SORT_CODE = [
   /* 18 */ "}",
 ];
 
+// --- Bubble Sort C Program ---
+const C_BUBBLE_SORT_CODE = [
+  /* 0 */ "void bubbleSort(int arr[], int n) {",
+  /* 1 */ "  int i, j, temp;",
+  /* 2 */ "  bool swapped;",
+  /* 3 */ "  for (i = 0; i < n - 1; i++) {",
+  /* 4 */ "    swapped = false;",
+  /* 5 */ "    for (j = 0; j < n - i - 1; j++) {",
+  /* 6 */ "      // Compare adjacent elements",
+  /* 7 */ "      if (arr[j] > arr[j + 1]) {",
+  /* 8 */ "        // Swap arr[j] and arr[j+1]",
+  /* 9 */ "        temp = arr[j];",
+  /* 10 */ "        arr[j] = arr[j + 1];",
+  /* 11 */ "        arr[j + 1] = temp;",
+  /* 12 */ "        swapped = true;",
+  /* 13 */ "      }",
+  /* 14 */ "    } // End inner loop",
+  /* 15 */ "",
+  /* 16 */ "    // If no two elements were swapped",
+  /* 17 */ "    // by inner loop, then break",
+  /* 18 */ "    if (swapped == false)",
+  /* 19 */ "      break;",
+  /* 20 */ "  } // End outer loop",
+  /* 21 */ "}",
+];
+
+
 interface AnimationStep {
   array: number[];
   comparing: number[];
@@ -46,7 +73,8 @@ interface AnimationStep {
   sorted: number[];
   passCompleted?: number;
   done?: boolean;
-  highlightedCodeLine?: number | number[];
+  highlightedPseudoCodeLine?: number | number[]; // Renamed
+  highlightedCCodeLine?: number | number[];    // New
 }
 
 interface BubbleSortVisualizerProps {
@@ -77,48 +105,22 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, highlightedLines, 
     if (typeof highlightedLines === 'number') return highlightedLines === lineNumber;
     return highlightedLines.includes(lineNumber);
   };
-
   const defaultCodeStyle: CSSProperties = {
-    backgroundColor: '#282c34', // Dark background for the code block
-    color: '#abb2bf',           // Default text color
-    paddingTop: '0.5em',        // Reduced top padding
-    paddingBottom: '0.5em',     // Reduced bottom padding
-    paddingLeft: '0.5em',       // Reduced left padding
-    paddingRight: '0.5em',      // Reduced right padding
-    borderRadius: '8px',
-    fontSize: '0.85em',
-    fontFamily: '"Fira Code", "Courier New", monospace',
-    whiteSpace: 'pre',          // Preserve whitespace and line breaks from the code string array
-    overflowX: 'auto',          // Allow horizontal scrolling for long lines
-    textAlign: 'left',          // Ensure text is left-justified
-    lineHeight: '1.6',
-    width: '100%',              // Make pre take full width of its parent
-    boxSizing: 'border-box',    // Ensure padding is included in width
+    backgroundColor: '#282c34', color: '#abb2bf', paddingTop: '0.5em', paddingBottom: '0.5em',
+    paddingLeft: '0.5em', paddingRight: '0.5em', borderRadius: '8px', fontSize: '0.85em',
+    fontFamily: '"Fira Code", "Courier New", monospace', whiteSpace: 'pre',
+    overflowX: 'auto', textAlign: 'left', lineHeight: '1.6', width: '100%', boxSizing: 'border-box',
   };
-
   return (
     <pre style={{ ...defaultCodeStyle, ...style }}>
       {codeLines.map((line, index) => (
-        <code
-          key={index}
-          style={{
-            display: 'block', // Each line on its own
-            backgroundColor: isLineHighlighted(index) ? 'rgba(255, 255, 0, 0.25)' : 'transparent',
-            color: isLineHighlighted(index) ? '#e6e6e6' : '#abb2bf',
-            padding: '1px 5px', // Minimal padding for individual lines
-            borderRadius: '3px',
-            transition: 'background-color 0.3s ease, color 0.3s ease',
-          }}
-        >
-          {/* Line number styling */}
-          <span style={{
-            display: 'inline-block',
-            width: '2.5em', // Fixed width for line numbers
-            color: '#6c757d', // Dim color for line numbers
-            marginRight: '1em', // Space between number and code
-            textAlign: 'right', // Align numbers to the right within their fixed width
-            userSelect: 'none', // Prevent selecting line numbers
-          }}>
+        <code key={index} style={{
+          display: 'block',
+          backgroundColor: isLineHighlighted(index) ? 'rgba(255, 255, 0, 0.25)' : 'transparent',
+          color: isLineHighlighted(index) ? '#e6e6e6' : '#abb2bf',
+          padding: '1px 5px', borderRadius: '3px', transition: 'background-color 0.3s ease, color 0.3s ease',
+        }}>
+          <span style={{ display: 'inline-block', width: '2.5em', color: '#6c757d', marginRight: '1em', textAlign: 'right', userSelect: 'none' }}>
             {index + 1}
           </span>
           {line}
@@ -144,35 +146,98 @@ const BubbleSortVisualizer: React.FC<BubbleSortVisualizerProps> = ({
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(-1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>("Click Start to visualize Bubble Sort");
+  const [codeView, setCodeView] = useState<'pseudocode' | 'cProgram'>('pseudocode');
 
   const animationSteps = useMemo(() => {
     const arr = [...initialArray];
     const steps: AnimationStep[] = [];
     const n = arr.length;
     let localArr = [...arr];
-    steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: [], highlightedCodeLine: [0, 1, 18] });
+
+    steps.push({
+      array: [...localArr], comparing: [], swapped: [], sorted: [],
+      highlightedPseudoCodeLine: [0, 1, 18], // func, n, end }
+      highlightedCCodeLine: [0, 1, 2, 21] // func, declarations, end }
+    });
+
     for (let i = 0; i < n - 1; i++) {
-      steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: Array.from({ length: i }, (_, k) => n - 1 - k), highlightedCodeLine: 2 });
-      steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: Array.from({ length: i }, (_, k) => n - 1 - k), highlightedCodeLine: 3 });
+      steps.push({
+        array: [...localArr], comparing: [], swapped: [],
+        sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
+        highlightedPseudoCodeLine: 2, // Outer loop
+        highlightedCCodeLine: 3       // Outer loop
+      });
+      steps.push({
+        array: [...localArr], comparing: [], swapped: [],
+        sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
+        highlightedPseudoCodeLine: 3, // swappedInPass = false
+        highlightedCCodeLine: 4       // swapped = false
+      });
       let swappedInPass = false;
+
       for (let j = 0; j < n - i - 1; j++) {
-        steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: Array.from({ length: i }, (_, k) => n - 1 - k), highlightedCodeLine: 4 });
-        steps.push({ array: [...localArr], comparing: [j, j + 1], swapped: [], sorted: Array.from({ length: i }, (_, k) => n - 1 - k), highlightedCodeLine: [5, 6] });
+        steps.push({
+          array: [...localArr], comparing: [], swapped: [],
+          sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
+          highlightedPseudoCodeLine: 4, // Inner loop
+          highlightedCCodeLine: 5       // Inner loop
+        });
+        steps.push({ // Comparing
+          array: [...localArr], comparing: [j, j + 1], swapped: [],
+          sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
+          highlightedPseudoCodeLine: [5, 6], // Compare comment, if
+          highlightedCCodeLine: [6, 7]       // Compare comment, if
+        });
         if (localArr[j] > localArr[j + 1]) {
           [localArr[j], localArr[j + 1]] = [localArr[j + 1], localArr[j]];
           swappedInPass = true;
-          steps.push({ array: [...localArr], comparing: [], swapped: [j, j + 1], sorted: Array.from({ length: i }, (_, k) => n - 1 - k), highlightedCodeLine: [7, 8, 9] });
+          steps.push({ // Swapped
+            array: [...localArr], comparing: [], swapped: [j, j + 1],
+            sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
+            highlightedPseudoCodeLine: [7, 8, 9], // Swap comment, swap, swappedInPass = true
+            highlightedCCodeLine: [8, 9, 10, 11, 12] // Swap comment, temp logic, swapped = true
+          });
         }
+        // After if or no-swap, next step is either next inner loop or end of inner loop
       }
-      steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: Array.from({ length: i }, (_, k) => n - 1 - k), highlightedCodeLine: 11 });
-      steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: Array.from({ length: i }, (_, k) => n - 1 - k), highlightedCodeLine: [12, 13] });
+      steps.push({
+        array: [...localArr], comparing: [], swapped: [],
+        sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
+        highlightedPseudoCodeLine: 11, // End inner loop
+        highlightedCCodeLine: 14       // End inner loop
+      });
+
+      steps.push({
+        array: [...localArr], comparing: [], swapped: [],
+        sorted: Array.from({ length: i }, (_, k) => n - 1 - k),
+        highlightedPseudoCodeLine: [12, 13], // Optimization comment, if
+        highlightedCCodeLine: [16,17,18]      // Optimization comment, if
+      });
       if (!swappedInPass) {
-        steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: Array.from({ length: i + 1 }, (_, k) => n - 1 - k), highlightedCodeLine: 14, passCompleted: i });
+        steps.push({
+          array: [...localArr], comparing: [], swapped: [],
+          sorted: Array.from({ length: i + 1 }, (_, k) => n - 1 - k), // Mark elements up to this point as sorted conceptually
+          highlightedPseudoCodeLine: 14, // break
+          highlightedCCodeLine: 19,      // break
+          passCompleted: i
+        });
         break;
       }
-      steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: Array.from({ length: i + 1 }, (_, k) => n - 1 - k), passCompleted: i, highlightedCodeLine: 16 });
+      steps.push({ // End of outer loop pass
+        array: [...localArr], comparing: [], swapped: [],
+        sorted: Array.from({ length: i + 1 }, (_, k) => n - 1 - k),
+        passCompleted: i,
+        highlightedPseudoCodeLine: 16, // End outer loop
+        highlightedCCodeLine: 20       // End outer loop
+      });
     }
-    steps.push({ array: [...localArr], comparing: [], swapped: [], sorted: Array.from({ length: n }, (_, k) => k), done: true, highlightedCodeLine: [17, 18] });
+    steps.push({
+      array: [...localArr], comparing: [], swapped: [],
+      sorted: Array.from({ length: n }, (_, k) => k), // All sorted
+      done: true,
+      highlightedPseudoCodeLine: [17, 18], // return, end }
+      highlightedCCodeLine: 21             // end }
+    });
     return steps;
   }, [initialArray]);
 
@@ -311,32 +376,19 @@ const BubbleSortVisualizer: React.FC<BubbleSortVisualizerProps> = ({
   const handleNextStep = () => { if (currentStepIndex < animationSteps.length - 1) { setIsPlaying(false); setCurrentStepIndex(prev => prev + 1); }};
   const handlePrevStep = () => { if (currentStepIndex > 0) { setIsPlaying(false); setCurrentStepIndex(prev => prev - 1); }};
 
-  const highlightedCode = animationSteps[currentStepIndex]?.highlightedCodeLine;
+  const currentStepData = animationSteps[currentStepIndex];
+  const highlightedCodeForDisplay = codeView === 'pseudocode'
+    ? currentStepData?.highlightedPseudoCodeLine
+    : currentStepData?.highlightedCCodeLine;
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '1rem' }}>
       <h2 style={{ textAlign: 'center', color: '#ecf0f1', fontSize: '1.5rem', marginBottom: '0.5rem' }}>
         Bubble Sort Visualization
       </h2>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column', // Default: stack vertically
-        alignItems: 'stretch',   // Stretch items to fill width in column mode
-        gap: '1.5rem',
-        width: '100%',
-        maxWidth: '1200px',
-      }}>
-        {/* Responsive wrapper for medium screens and up */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '1.5rem', width: '100%', maxWidth: '1200px' }}>
         <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '1.5rem', width: '100%' }}>
-          {/* Left Side: 3D Visualization and Controls */}
-          <div style={{
-            flex: '1 1 550px', // Flex grow, shrink, basis (adjust basis for desired min width)
-            minWidth: '300px', // Minimum width before wrapping
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1rem',
-          }}>
+          <div style={{ flex: '1 1 550px', minWidth: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
             <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', minHeight: '300px', maxHeight: '450px' }}>
               <div ref={mountRef} style={{ width: '100%', height: '100%', border: '1px solid #7f8c8d', borderRadius: '8px', backgroundColor: '#34495e' }} />
               <div ref={labelsContainerRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
@@ -352,19 +404,20 @@ const BubbleSortVisualizer: React.FC<BubbleSortVisualizerProps> = ({
               <button onClick={handleReset} style={buttonStyle}>Reset</button>
             </div>
           </div>
-
-          {/* Right Side: Code Display */}
           <div style={{
-            flex: '1 1 400px', // Flex grow, shrink, basis
-            minWidth: '300px', // Minimum width before wrapping
-            maxHeight: '550px', // Match visualization area roughly
-            display: 'flex', // Added to make CodeDisplay take full height if possible
-            flexDirection: 'column',
+            flex: '1 1 400px', minWidth: '300px', maxHeight: '550px',
+            display: 'flex', flexDirection: 'column', gap: '0.5rem'
           }}>
+            <button
+              onClick={() => setCodeView(prev => prev === 'pseudocode' ? 'cProgram' : 'pseudocode')}
+              style={{ ...buttonStyle, backgroundColor: '#2980b9', alignSelf: 'flex-start', marginBottom: '0.5rem' }}
+            >
+              Show {codeView === 'pseudocode' ? 'C Program' : 'Pseudocode'}
+            </button>
             <CodeDisplay
-              codeLines={BUBBLE_SORT_CODE}
-              highlightedLines={highlightedCode}
-              style={{ flexGrow: 1, overflowY: 'auto' }} // Allow CodeDisplay's pre to grow and scroll
+              codeLines={codeView === 'pseudocode' ? BUBBLE_SORT_PSEUDO_CODE : C_BUBBLE_SORT_CODE}
+              highlightedLines={highlightedCodeForDisplay}
+              style={{ flexGrow: 1, overflowY: 'auto', maxHeight: 'calc(550px - 3rem)' /* Adjust based on button height */ }}
             />
           </div>
         </div>

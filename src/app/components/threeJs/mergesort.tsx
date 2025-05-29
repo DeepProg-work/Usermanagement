@@ -17,10 +17,10 @@ const COMPARE_COLOR = new THREE.Color(0xf39c12);   // Orange for elements being 
 const PLACE_COLOR = new THREE.Color(0xf1c40f);     // Yellow for element being placed
 const SORTED_COLOR = new THREE.Color(0x2ecc71);    // Green for sorted parts
 
-const ANIMATION_DELAY_MS = 700; // Adjusted for Merge Sort's steps
+const ANIMATION_DELAY_MS = 700;
 
 // --- Merge Sort Pseudocode ---
-const MERGE_SORT_CODE = [
+const MERGE_SORT_PSEUDO_CODE = [ // Renamed for clarity
   /* 0 */ "function mergeSort(arr, left, right) {",
   /* 1 */ "  if (left >= right) { // Base case",
   /* 2 */ "    return;",
@@ -55,22 +55,68 @@ const MERGE_SORT_CODE = [
   /* 31 */ "}",
 ];
 
+// --- Merge Sort C Program ---
+const C_MERGE_SORT_CODE = [
+  /* 0 */ "void merge(int arr[], int l, int m, int r) {",
+  /* 1 */ "  int i, j, k;",
+  /* 2 */ "  int n1 = m - l + 1;",
+  /* 3 */ "  int n2 = r - m;",
+  /* 4 */ "  int L[n1], R[n2]; // Temp arrays",
+  /* 5 */ "",
+  /* 6 */ "  for (i = 0; i < n1; i++) L[i] = arr[l + i];",
+  /* 7 */ "  for (j = 0; j < n2; j++) R[j] = arr[m + 1 + j];",
+  /* 8 */ "",
+  /* 9 */ "  i = 0; j = 0; k = l; // Initial indices",
+  /* 10 */ "  while (i < n1 && j < n2) {",
+  /* 11 */ "    if (L[i] <= R[j]) {",
+  /* 12 */ "      arr[k] = L[i];",
+  /* 13 */ "      i++;",
+  /* 14 */ "    } else {",
+  /* 15 */ "      arr[k] = R[j];",
+  /* 16 */ "      j++;",
+  /* 17 */ "    }",
+  /* 18 */ "    k++;",
+  /* 19 */ "  }",
+  /* 20 */ "",
+  /* 21 */ "  while (i < n1) { // Copy remaining of L[]",
+  /* 22 */ "    arr[k] = L[i];",
+  /* 23 */ "    i++; k++;",
+  /* 24 */ "  }",
+  /* 25 */ "  while (j < n2) { // Copy remaining of R[]",
+  /* 26 */ "    arr[k] = R[j];",
+  /* 27 */ "    j++; k++;",
+  /* 28 */ "  }",
+  /* 29 */ "}",
+  /* 30 */ "",
+  /* 31 */ "void mergeSort(int arr[], int l, int r) {",
+  /* 32 */ "  if (l < r) { // Base case: if l >= r, it's sorted",
+  /* 33 */ "    int m = l + (r - l) / 2; // Midpoint",
+  /* 34 */ "",
+  /* 35 */ "    mergeSort(arr, l, m);      // Sort first half",
+  /* 36 */ "    mergeSort(arr, m + 1, r);  // Sort second half",
+  /* 37 */ "",
+  /* 38 */ "    merge(arr, l, m, r);       // Merge them",
+  /* 39 */ "  }",
+  /* 40 */ "}",
+];
+
 
 interface AnimationStep {
   array: number[];
-  activeRecursiveRange?: [number, number]; // [l, r] of current mergeSort call
-  isMergePhase?: boolean;                 // True if currently in merge operation for activeRecursiveRange
-  isRecursiveCall?: boolean;              // True if currently in a recursive call phase
-  leftMergeRange?: [number, number];      // [l, m] original indices
-  rightMergeRange?: [number, number];     // [m+1, r] original indices
-  compareInL?: { value: number, originalIndex: number }; // Value and original index from left part
-  compareInR?: { value: number, originalIndex: number }; // Value and original index from right part
-  writeIndex?: number;                    // k, where value is being written in original array
-  writtenValue?: number;                  // Value being written
+  activeRecursiveRange?: [number, number];
+  isMergePhase?: boolean;
+  isRecursiveCall?: boolean;
+  leftMergeRange?: [number, number];
+  rightMergeRange?: [number, number];
+  compareInL?: { value: number, originalIndex: number };
+  compareInR?: { value: number, originalIndex: number };
+  writeIndex?: number;
+  writtenValue?: number;
   isCopyingRemaining?: 'L' | 'R';
-  copyRemainingOriginalIndex?: number;    // Original index of element being copied from L or R
-  sortedRanges: [number, number][];       // Ranges confirmed to be sorted
-  highlightedCodeLine?: number | number[];
+  copyRemainingOriginalIndex?: number;
+  sortedRanges: [number, number][];
+  highlightedPseudoCodeLine?: number | number[]; // Renamed
+  highlightedCCodeLine?: number | number[];    // New
   statusMessage?: string;
   done?: boolean;
 }
@@ -144,15 +190,15 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(-1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>("Click Start to visualize Merge Sort");
+  const [codeView, setCodeView] = useState<'pseudocode' | 'cProgram'>('pseudocode'); // State for code view
 
   const animationSteps = useMemo(() => {
     const steps: AnimationStep[] = [];
-    let arrForSorting = [...initialArray]; // Use a mutable copy for the sorting process
+    let arrForSorting = [...initialArray];
 
     steps.push({
-      array: [...arrForSorting],
-      sortedRanges: [],
-      highlightedCodeLine: [0, 10, 12, 31],
+      array: [...arrForSorting], sortedRanges: [],
+      highlightedPseudoCodeLine: [0, 10, 12, 31], highlightedCCodeLine: [0, 29, 31, 40],
       statusMessage: "Initial array. Merge Sort begins.",
     });
 
@@ -163,24 +209,30 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
       const R = new Array(n2);
 
       steps.push({
-        array: [...arrForSorting],
-        isMergePhase: true,
-        activeRecursiveRange: [l,r], // The range this merge will sort
-        leftMergeRange: [l, m],
-        rightMergeRange: [m + 1, r],
+        array: [...arrForSorting], isMergePhase: true, activeRecursiveRange: [l,r],
+        leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
         sortedRanges: [...currentSortedRanges],
-        highlightedCodeLine: [13, 14],
-        statusMessage: `Merging arr[${l}..${m}] and arr[${m + 1}..${r}]. Creating temp arrays L & R.`,
+        highlightedPseudoCodeLine: [13, 14], highlightedCCodeLine: [1,2,3,4],
+        statusMessage: `Merging arr[${l}..${m}] and arr[${m + 1}..${r}]. Creating temp arrays.`,
       });
+      
+      steps.push({ // Explicit step for copying to L and R
+        array: [...arrForSorting], isMergePhase: true, activeRecursiveRange: [l,r],
+        leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
+        sortedRanges: [...currentSortedRanges],
+        highlightedPseudoCodeLine: 14, highlightedCCodeLine: [6,7],
+        statusMessage: `Copying data to temporary L and R arrays.`,
+      });
+      for (let i_copy = 0; i_copy < n1; i_copy++) L[i_copy] = arrForSorting[l + i_copy];
+      for (let j_copy = 0; j_copy < n2; j_copy++) R[j_copy] = arrForSorting[m + 1 + j_copy];
 
-      for (let i = 0; i < n1; i++) L[i] = arrForSorting[l + i];
-      for (let j = 0; j < n2; j++) R[j] = arrForSorting[m + 1 + j];
 
       let i = 0, j = 0, k = l;
       steps.push({
         array: [...arrForSorting], isMergePhase: true, activeRecursiveRange: [l,r],
         leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
-        sortedRanges: [...currentSortedRanges], highlightedCodeLine: 15,
+        sortedRanges: [...currentSortedRanges],
+        highlightedPseudoCodeLine: 15, highlightedCCodeLine: 9,
         statusMessage: `Pointers: L[${i}]=${L[i] ?? 'end'}, R[${j}]=${R[j] ?? 'end'}, writing to arr[${k}]`,
       });
 
@@ -190,8 +242,8 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
           leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
           compareInL: { value: L[i], originalIndex: l + i },
           compareInR: { value: R[j], originalIndex: m + 1 + j },
-          writeIndex: k,
-          sortedRanges: [...currentSortedRanges], highlightedCodeLine: [17, 18],
+          writeIndex: k, sortedRanges: [...currentSortedRanges],
+          highlightedPseudoCodeLine: [17, 18], highlightedCCodeLine: [10, 11],
           statusMessage: `Comparing L[${i}] (${L[i]}) and R[${j}] (${R[j]})`,
         });
         if (L[i] <= R[j]) {
@@ -199,10 +251,10 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
           steps.push({
             array: [...arrForSorting], isMergePhase: true, activeRecursiveRange: [l,r],
             leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
-            compareInL: { value: L[i], originalIndex: l + i }, // Keep showing comparison for context
+            compareInL: { value: L[i], originalIndex: l + i },
             compareInR: { value: R[j], originalIndex: m + 1 + j },
-            writeIndex: k, writtenValue: L[i],
-            sortedRanges: [...currentSortedRanges], highlightedCodeLine: 19,
+            writeIndex: k, writtenValue: L[i], sortedRanges: [...currentSortedRanges],
+            highlightedPseudoCodeLine: 19, highlightedCCodeLine: [12, 13],
             statusMessage: `Placed ${L[i]} from Left into arr[${k}]`,
           });
           i++;
@@ -213,19 +265,19 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
             leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
             compareInL: { value: L[i], originalIndex: l + i },
             compareInR: { value: R[j], originalIndex: m + 1 + j },
-            writeIndex: k, writtenValue: R[j],
-            sortedRanges: [...currentSortedRanges], highlightedCodeLine: 21,
+            writeIndex: k, writtenValue: R[j], sortedRanges: [...currentSortedRanges],
+            highlightedPseudoCodeLine: 21, highlightedCCodeLine: [15, 16],
             statusMessage: `Placed ${R[j]} from Right into arr[${k}]`,
           });
           j++;
         }
         k++;
-        if (i < n1 || j < n2) { // If there are more elements to process in this merge
+        if (i < n1 || j < n2) {
              steps.push({
                 array: [...arrForSorting], isMergePhase: true, activeRecursiveRange: [l,r],
                 leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
-                writeIndex: k-1, // Show last written index
-                sortedRanges: [...currentSortedRanges], highlightedCodeLine: 23,
+                writeIndex: k-1, sortedRanges: [...currentSortedRanges],
+                highlightedPseudoCodeLine: 23, highlightedCCodeLine: 18,
                 statusMessage: `Incremented k to ${k}. Next L[${i}]=${L[i] ?? 'end'}, R[${j}]=${R[j] ?? 'end'}`,
             });
         }
@@ -236,105 +288,100 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
           array: [...arrForSorting], isMergePhase: true, activeRecursiveRange: [l,r],
           leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
           isCopyingRemaining: 'L', copyRemainingOriginalIndex: l + i,
-          writeIndex: k, writtenValue: L[i],
-          sortedRanges: [...currentSortedRanges], highlightedCodeLine: [26, 27],
+          writeIndex: k, writtenValue: L[i], sortedRanges: [...currentSortedRanges],
+          highlightedPseudoCodeLine: [26, 27], highlightedCCodeLine: [21,22,23],
           statusMessage: `Copying remaining ${L[i]} from Left to arr[${k}]`,
         });
-        arrForSorting[k] = L[i];
-        i++;
-        k++;
+        arrForSorting[k] = L[i]; i++; k++;
       }
       while (j < n2) {
         steps.push({
           array: [...arrForSorting], isMergePhase: true, activeRecursiveRange: [l,r],
           leftMergeRange: [l, m], rightMergeRange: [m + 1, r],
           isCopyingRemaining: 'R', copyRemainingOriginalIndex: m + 1 + j,
-          writeIndex: k, writtenValue: R[j],
-          sortedRanges: [...currentSortedRanges], highlightedCodeLine: [29, 30],
+          writeIndex: k, writtenValue: R[j], sortedRanges: [...currentSortedRanges],
+          highlightedPseudoCodeLine: [29, 30], highlightedCCodeLine: [25,26,27],
           statusMessage: `Copying remaining ${R[j]} from Right to arr[${k}]`,
         });
-        arrForSorting[k] = R[j];
-        j++;
-        k++;
+        arrForSorting[k] = R[j]; j++; k++;
       }
-      // After merge, this range [l,r] is sorted. Update sortedRanges.
       let updatedSortedRanges = [...currentSortedRanges];
       let newRange: [number, number] = [l, r];
-      // Simple merge of sorted ranges - can be optimized
-      updatedSortedRanges = updatedSortedRanges.filter(range => range[0] > r || range[1] < l); // Remove fully contained or disjoint old ranges
+      updatedSortedRanges = updatedSortedRanges.filter(range => range[0] > r || range[1] < l);
       updatedSortedRanges.push(newRange);
       updatedSortedRanges.sort((a, b) => a[0] - b[0]);
-      // Consolidate overlapping/adjacent ranges
       if (updatedSortedRanges.length > 0) {
         const consolidated = [updatedSortedRanges[0]];
         for (let idx = 1; idx < updatedSortedRanges.length; idx++) {
           const last = consolidated[consolidated.length - 1];
           const current = updatedSortedRanges[idx];
-          if (current[0] <= last[1] + 1) { // Overlap or adjacent
-            last[1] = Math.max(last[1], current[1]);
-          } else {
-            consolidated.push(current);
-          }
+          if (current[0] <= last[1] + 1) { last[1] = Math.max(last[1], current[1]); }
+          else { consolidated.push(current); }
         }
         updatedSortedRanges = consolidated;
       }
-
-
       steps.push({
-        array: [...arrForSorting],
-        activeRecursiveRange: [l,r],
+        array: [...arrForSorting], activeRecursiveRange: [l,r],
         sortedRanges: updatedSortedRanges,
-        highlightedCodeLine: 31, // End of merge function
+        highlightedPseudoCodeLine: 31, highlightedCCodeLine: 29,
         statusMessage: `Segment arr[${l}..${r}] is now sorted.`,
       });
     }
 
     function mergeSortRecursive(l: number, r: number, parentSortedRanges: [number, number][]) {
       steps.push({
-        array: [...arrForSorting],
-        activeRecursiveRange: [l, r],
-        isRecursiveCall: true,
+        array: [...arrForSorting], activeRecursiveRange: [l, r], isRecursiveCall: true,
         sortedRanges: [...parentSortedRanges],
-        highlightedCodeLine: 0,
+        highlightedPseudoCodeLine: 0, highlightedCCodeLine: 31,
         statusMessage: `mergeSort(arr, ${l}, ${r})`,
       });
 
-      if (l >= r) {
+      if (l >= r) { // Base case for pseudocode
         steps.push({
-          array: [...arrForSorting],
-          activeRecursiveRange: [l, r],
-          isRecursiveCall: true, // Still part of a call, just base case
-          sortedRanges: mergeSortedRanges([...parentSortedRanges], (l <= r ? [[l,r]] : [])), // A single element range is sorted
-          highlightedCodeLine: [1, 2],
+          array: [...arrForSorting], activeRecursiveRange: [l, r], isRecursiveCall: true,
+          sortedRanges: mergeSortedRanges([...parentSortedRanges], (l <= r ? [[l,r]] : [])),
+          highlightedPseudoCodeLine: [1, 2], highlightedCCodeLine: 32, // C code's if (l < r) is the opposite, so this highlights the condition itself
           statusMessage: `Base case: l=${l}, r=${r}. Segment is sorted.`,
         });
         return;
       }
+      // If not base case, show the check in C code
+       steps.push({
+          array: [...arrForSorting], activeRecursiveRange: [l,r], isRecursiveCall: true,
+          sortedRanges: [...parentSortedRanges],
+          highlightedPseudoCodeLine: 1, // Still in the "if" block conceptually for Pseudocode
+          highlightedCCodeLine: 32, // C: if (l < r)
+          statusMessage: `Recursive step for [${l}..${r}]. l < r is true.`
+      });
+
 
       const m = l + Math.floor((r - l) / 2);
       steps.push({
-        array: [...arrForSorting],
-        activeRecursiveRange: [l, r],
-        isRecursiveCall: true,
+        array: [...arrForSorting], activeRecursiveRange: [l, r], isRecursiveCall: true,
         sortedRanges: [...parentSortedRanges],
-        highlightedCodeLine: 4,
+        highlightedPseudoCodeLine: 4, highlightedCCodeLine: 33,
         statusMessage: `Calculated mid = ${m} for range [${l}..${r}]`,
       });
 
-      steps.push({ array: [...arrForSorting], activeRecursiveRange: [l,m], isRecursiveCall: true, sortedRanges: [...parentSortedRanges], highlightedCodeLine: 6, statusMessage: `Recursive call: mergeSort(arr, ${l}, ${m})` });
+      steps.push({ array: [...arrForSorting], activeRecursiveRange: [l,m], isRecursiveCall: true, sortedRanges: [...parentSortedRanges], highlightedPseudoCodeLine: 6, highlightedCCodeLine: 35, statusMessage: `Recursive call: mergeSort(arr, ${l}, ${m})` });
       mergeSortRecursive(l, m, parentSortedRanges);
       const sortedRangesAfterLeft = steps[steps.length - 1].sortedRanges;
 
-
-      steps.push({ array: [...arrForSorting], activeRecursiveRange: [m+1,r], isRecursiveCall: true, sortedRanges: [...sortedRangesAfterLeft], highlightedCodeLine: 7, statusMessage: `Recursive call: mergeSort(arr, ${m+1}, ${r})` });
+      steps.push({ array: [...arrForSorting], activeRecursiveRange: [m+1,r], isRecursiveCall: true, sortedRanges: [...sortedRangesAfterLeft], highlightedPseudoCodeLine: 7, highlightedCCodeLine: 36, statusMessage: `Recursive call: mergeSort(arr, ${m+1}, ${r})` });
       mergeSortRecursive(m + 1, r, sortedRangesAfterLeft);
       const sortedRangesAfterRight = steps[steps.length - 1].sortedRanges;
 
-      steps.push({ array: [...arrForSorting], activeRecursiveRange: [l,r], isMergePhase: true, leftMergeRange: [l,m], rightMergeRange: [m+1,r], sortedRanges: [...sortedRangesAfterRight], highlightedCodeLine: 9, statusMessage: `Prepare to merge arr[${l}..${m}] and arr[${m+1}..${r}]` });
+      steps.push({ array: [...arrForSorting], activeRecursiveRange: [l,r], isMergePhase: true, leftMergeRange: [l,m], rightMergeRange: [m+1,r], sortedRanges: [...sortedRangesAfterRight], highlightedPseudoCodeLine: 9, highlightedCCodeLine: 38, statusMessage: `Prepare to merge arr[${l}..${m}] and arr[${m+1}..${r}]` });
       merge(l, m, r, sortedRangesAfterRight);
+      
+      steps.push({
+          array: [...arrForSorting], activeRecursiveRange: [l,r], isRecursiveCall: true,
+          sortedRanges: steps[steps.length-1].sortedRanges,
+          highlightedPseudoCodeLine: 10, highlightedCCodeLine: 40, // End of mergeSort block
+          statusMessage: `Finished mergeSort(arr, ${l}, ${r})`
+      });
     }
     
-    // Helper to merge sorted ranges (simplified for now)
     function mergeSortedRanges(existing: [number, number][], newRanges: [number, number][]): [number, number][] {
         let combined = [...existing, ...newRanges];
         if (combined.length === 0) return [];
@@ -343,15 +390,11 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
         for (let i = 1; i < combined.length; i++) {
             const last = consolidated[consolidated.length - 1];
             const current = combined[i];
-            if (current[0] <= last[1] + 1) {
-                last[1] = Math.max(last[1], current[1]);
-            } else {
-                consolidated.push(current);
-            }
+            if (current[0] <= last[1] + 1) { last[1] = Math.max(last[1], current[1]); }
+            else { consolidated.push(current); }
         }
         return consolidated;
     }
-
 
     mergeSortRecursive(0, arrForSorting.length - 1, []);
 
@@ -359,7 +402,7 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
       array: [...arrForSorting],
       sortedRanges: arrForSorting.length > 0 ? [[0, arrForSorting.length - 1]] : [],
       done: true,
-      highlightedCodeLine: [10, 31], // End of functions
+      highlightedPseudoCodeLine: [10, 31], highlightedCCodeLine: [29, 40],
       statusMessage: "Array is completely sorted!",
     });
 
@@ -469,7 +512,7 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
     }
 
     const step = animationSteps[currentStepIndex];
-    const maxValue = Math.max(...step.array, 1); // Use current step's array for max value
+    const maxValue = Math.max(...step.array, 1);
     setStatusMessage(step.statusMessage || (step.done ? "Sorting Complete!" : "Processing..."));
 
     meshesRef.current.forEach((mesh, index) => {
@@ -484,8 +527,6 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
       }
 
       let targetColor = DEFAULT_COLOR;
-
-      // Check if index is within any sorted range
       let isSorted = false;
       for (const range of step.sortedRanges) {
         if (index >= range[0] && index <= range[1]) {
@@ -493,9 +534,7 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
           break;
         }
       }
-      if (isSorted || step.done) {
-        targetColor = SORTED_COLOR;
-      }
+      if (isSorted || step.done) { targetColor = SORTED_COLOR; }
 
       if (step.isMergePhase) {
         if (step.leftMergeRange && index >= step.leftMergeRange[0] && index <= step.leftMergeRange[1] && !isSorted) {
@@ -507,20 +546,15 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
         if (step.compareInL?.originalIndex === index || step.compareInR?.originalIndex === index) {
           targetColor = COMPARE_COLOR;
         }
-        if (step.writeIndex === index) {
-          targetColor = PLACE_COLOR;
-        }
+        if (step.writeIndex === index) { targetColor = PLACE_COLOR; }
         if (step.isCopyingRemaining && step.copyRemainingOriginalIndex === index) {
-            targetColor = PLACE_COLOR; // Highlight element being copied from L/R
+            targetColor = PLACE_COLOR;
         }
-
       } else if (step.isRecursiveCall && step.activeRecursiveRange && !isSorted) {
         if (index >= step.activeRecursiveRange[0] && index <= step.activeRecursiveRange[1]) {
           targetColor = RECURSION_COLOR;
         }
       }
-
-
       (mesh.material as THREE.MeshStandardMaterial).color.set(targetColor);
       if (labelElementsRef.current[index]) {
         labelElementsRef.current[index]!.textContent = String(value);
@@ -544,7 +578,10 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
   const handleNextStep = () => { if (currentStepIndex < animationSteps.length - 1) { setIsPlaying(false); setCurrentStepIndex(prev => prev + 1); }};
   const handlePrevStep = () => { if (currentStepIndex > 0) { setIsPlaying(false); setCurrentStepIndex(prev => prev - 1); }};
 
-  const highlightedCode = animationSteps[currentStepIndex]?.highlightedCodeLine;
+  const currentStepData = animationSteps[currentStepIndex];
+  const highlightedCodeForDisplay = codeView === 'pseudocode'
+    ? currentStepData?.highlightedPseudoCodeLine
+    : currentStepData?.highlightedCCodeLine;
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '1rem' }}>
@@ -569,11 +606,20 @@ const MergeSortVisualizer: React.FC<MergeSortVisualizerProps> = ({
               <button onClick={handleReset} style={buttonStyle}>Reset</button>
             </div>
           </div>
-          <div style={{ flex: '1 1 400px', minWidth: '300px', maxHeight: '550px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            flex: '1 1 400px', minWidth: '300px', maxHeight: '550px',
+            display: 'flex', flexDirection: 'column', gap: '0.5rem'
+          }}>
+            <button
+              onClick={() => setCodeView(prev => prev === 'pseudocode' ? 'cProgram' : 'pseudocode')}
+              style={{ ...buttonStyle, backgroundColor: '#2980b9', alignSelf: 'flex-start', marginBottom: '0.5rem' }}
+            >
+              Show {codeView === 'pseudocode' ? 'C Program' : 'Pseudocode'}
+            </button>
             <CodeDisplay
-              codeLines={MERGE_SORT_CODE}
-              highlightedLines={highlightedCode}
-              style={{ flexGrow: 1, overflowY: 'auto' }}
+              codeLines={codeView === 'pseudocode' ? MERGE_SORT_PSEUDO_CODE : C_MERGE_SORT_CODE}
+              highlightedLines={highlightedCodeForDisplay}
+              style={{ flexGrow: 1, overflowY: 'auto', maxHeight: 'calc(550px - 3rem)' /* Adjust based on button height */ }}
             />
           </div>
         </div>
