@@ -19,8 +19,10 @@
     "@trpc/client": "^11.1.0",
     "@trpc/react-query": "^11.1.0",
     "@trpc/server": "^11.1.0",
+    "animejs": "^4.0.2",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",
+    "gsap": "^3.13.0",
     "next": "^15.1.8",
     "next-auth": "^5.0.0-beta.28",
     "pg": "^8.14.1",
@@ -36,6 +38,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.4",
+    "@types/animejs": "^3.1.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

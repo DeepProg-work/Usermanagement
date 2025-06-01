@@ -29,6 +29,7 @@ interface NavItem {
 const navLinkItems: NavItem[] = [
   { href: '/', label: 'Home' }, // Public
   { href: '/pages/sorting', label: 'Sorting' }, // Public
+  { href: '/pages/searching', label: 'Searching' },
   { href: '/pages/users', label: 'Users',allowedRoles: ['admin'] },
   { href: '/pages/roles',label: 'Roles', allowedRoles: ['admin']},
   
@@ -75,7 +76,7 @@ const renderDesktopNavLinks = () => {
 
 
   return (
-    <nav className="  bg-blue-400 text-white sticky top-0 left-0  z-50">
+    <nav className=" bg-gray-100 text-blue sticky top-0 left-0  z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 ">
           {/* Logo */}
