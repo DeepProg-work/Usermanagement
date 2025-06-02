@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import ThreeScene from "./components/threeJs/firstexample";
 import  GsapSortingVisualizer  from "./components/gsap/Sorting/page";
 import ArrayOperationsVisualizer from "./components/gsap/array/page";
+import StackOperationsVisualizer from "./components/gsap/stack/page";
+import QueueOperationsVisualizer from "./components/gsap/Queue/page";
 
 
 
@@ -31,7 +33,8 @@ export default  function Home() {
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Welcome to Our Product</h1>
           <p className="text-lg md:text-xl text-gray-600 mb-8"> {sessionstatus}</p>
-
+<QueueOperationsVisualizer />
+<StackOperationsVisualizer/>
 <ArrayOperationsVisualizer />
 <GsapSortingVisualizer />
 
