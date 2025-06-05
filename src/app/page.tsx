@@ -8,6 +8,8 @@ import ArrayOperationsVisualizer from "./components/gsap/array/page";
 import StackOperationsVisualizer from "./components/gsap/stack/page";
 import QueueOperationsVisualizer from "./components/gsap/Queue/page";
 import LinkedListVisualizer from "./components/gsap/linkedlists/page";
+import LinkedListVisualizerRF from "./components/gsap/linkedlists/page";
+import LinkedListFlow from "./components/gsap/linkedlists/page";
 
 
 
@@ -35,7 +37,7 @@ export default  function Home() {
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Welcome to Our Product</h1>
           <p className="text-lg md:text-xl text-gray-600 mb-8"> {sessionstatus}</p>
 
- <LinkedListVisualizer />
+ <LinkedListFlow/>
 {/*<QueueOperationsVisualizer />
 <StackOperationsVisualizer/>
 <ArrayOperationsVisualizer />
